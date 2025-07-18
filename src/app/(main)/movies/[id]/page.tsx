@@ -17,10 +17,9 @@ import { StarRating } from '@/components/star-rating';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useFormState } from 'react-dom';
 import { likeMovieAction, setWatchStatusAction, submitReviewAction } from '@/app/actions/movie-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition, useActionState } from 'react';
 import { cn } from '@/lib/utils';
 import type { WatchStatus } from '@/lib/db/schema';
 
@@ -60,7 +59,7 @@ function ReviewForm({ movie, onReviewSubmit }: { movie: Movie, onReviewSubmit: (
   const [rating, setRating] = useState(0);
 
   const initialState = { success: false, message: '' };
-  const [state, dispatch] = useFormState(submitReviewAction, initialState);
+  const [state, dispatch] = useActionState(submitReviewAction, initialState);
 
   useEffect(() => {
     if (state.message) {
