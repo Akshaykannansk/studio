@@ -51,27 +51,27 @@ export default function MainAppLayout({
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Dashboard">
-                  <Link href="/dashboard"><Home /> <span className="group-data-[collapsible=icon]:hidden">Dashboard</span></Link>
+                  <Link href="/dashboard"><Home /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Dashboard</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Search Movies">
-                  <Link href="/movies/search"><Search /> <span className="group-data-[collapsible=icon]:hidden">Search Movies</span></Link>
+                  <Link href="/movies/search"><Search /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Search Movies</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="My Lists">
-                  <Link href="/lists"><List /> <span className="group-data-[collapsible=icon]:hidden">My Lists</span></Link>
+                  <Link href="/lists"><List /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">My Lists</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Recommendations">
-                  <Link href="/recommendations"><ThumbsUp /> <span className="group-data-[collapsible=icon]:hidden">Recommendations</span></Link>
+                  <Link href="/recommendations"><ThumbsUp /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Recommendations</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Profile">
-                  <Link href="/profile"><User /> <span className="group-data-[collapsible=icon]:hidden">Profile</span></Link>
+                  <Link href="/profile"><User /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Profile</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -83,7 +83,7 @@ export default function MainAppLayout({
                     <SidebarMenuButton asChild tooltip="Settings">
                     <Link href="/settings">
                         <Settings />
-                        <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+                        <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Settings</span>
                     </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -92,7 +92,7 @@ export default function MainAppLayout({
                     {/* In a real app, this would trigger a logout action */}
                     <Link href="/"> 
                         <LogOut />
-                        <span className="group-data-[collapsible=icon]:hidden">Logout</span>
+                        <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Logout</span>
                     </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -104,9 +104,20 @@ export default function MainAppLayout({
           <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-card px-4 sm:h-16 sm:px-6">
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
-                {/* Global Search can go here */}
+              <form>
+                <div className="relative">
+                  <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search movies, lists, users..."
+                    className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+                  />
+                </div>
+              </form>
             </div>
-            {/* Other header items like notifications or user menu can go here for mobile if needed */}
+            <div className="md:hidden">
+              <UserAvatarBadge user={mockUser} />
+            </div>
           </header>
           <main className="flex-1 overflow-y-auto">
             {children}

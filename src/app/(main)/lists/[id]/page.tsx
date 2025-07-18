@@ -108,11 +108,11 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
     <div>
       <PageHeader title={list.name} description={`A list by @${list.owner.username}`}>
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild size="sm">
             <Link href="/lists"><ArrowLeft className="mr-2 h-4 w-4" /> All Lists</Link>
           </Button>
-          <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Share</Button>
-          <Button><Edit3 className="mr-2 h-4 w-4" /> Edit List</Button>
+          <Button variant="outline" size="sm"><Share2 className="mr-2 h-4 w-4" /> Share</Button>
+          <Button size="sm"><Edit3 className="mr-2 h-4 w-4" /> Edit List</Button>
         </div>
       </PageHeader>
 
@@ -142,13 +142,13 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
               {/* Add Movie Search/Button could go here */}
             </div>
             {list.movies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                 {list.movies.map((movie) => (
                   <div key={movie.id} className="relative group">
                     <MovieCard movie={{...movie, posterUrl: `${movie.posterUrl}`}} />
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 h-8 w-8">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>

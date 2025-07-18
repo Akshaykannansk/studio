@@ -33,7 +33,7 @@ export default function DashboardPage() {
             </Button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-            {mockMovies.slice(0,4).map((movie) => (
+            {mockMovies.slice(0,6).map((movie) => (
               <MovieCard key={movie.id} movie={{...movie, posterUrl: `${movie.posterUrl}&aihint=${movie.dataAiHint || 'movie poster'}`}} />
             ))}
           </div>
@@ -67,7 +67,7 @@ export default function DashboardPage() {
             </Button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-            {mockMovies.slice(2,6).reverse().map((movie) => ( // Just re-using some mock movies
+            {mockMovies.slice(0,6).reverse().map((movie) => ( // Just re-using some mock movies
               <MovieCard key={movie.id} movie={{...movie, id: `rec-${movie.id}`, posterUrl: `${movie.posterUrl}&aihint=${movie.dataAiHint || 'movie poster'}`}} />
             ))}
           </div>
