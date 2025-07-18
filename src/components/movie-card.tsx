@@ -1,3 +1,5 @@
+"use client";
+
 import type { Movie } from '@/types/filmfriend';
 import Image from 'next/image';
 import Link from 'next/link';
