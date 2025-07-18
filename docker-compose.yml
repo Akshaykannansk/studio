@@ -9,7 +9,7 @@ services:
     ports:
       - "3000:9002"
     volumes:
-      - .:/app
+      - ./src:/app/src
       - /app/node_modules
       - /app/.next
     environment:
