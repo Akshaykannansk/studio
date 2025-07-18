@@ -10,7 +10,7 @@ import type { Movie, MovieList, User } from '@/types/filmfriend';
 import { Edit3, PlusCircle, Share2, ThumbsUp, MessageSquare, Trash2, Search, Loader2, Lightbulb, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { MovieCard } from '@/components/movie-card';
-import { generateListSuggestions, type GenerateListSuggestionsInput } from '@/ai/flows/generate-list-suggestions';
+import { getRecommendations, type RecommendationInput } from '@/ai/flows/recommendation-engine';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -61,15 +61,25 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
 
   const handleGetSuggestions = async () => {
     setIsLoadingSuggestions(true);
+    setSuggestedMovies([]);
     try {
-      const input: GenerateListSuggestionsInput = {
-        listName: list.name,
-        movieTitles: list.movies.map(m => m.title),
-        userTaste: "I enjoy thought-provoking sci-fi with strong visuals and complex characters.", // This would be dynamic in a real app
+      const input: RecommendationInput = {
+        recommendationType: 'LIST_SUGGESTIONS',
+        userProfile: {
+            watchedMovies: [{title: 'Inception'}, {title: 'The Matrix'}],
+            likedMovies: [{title: 'Interstellar'}],
+            movieLists: [],
+            tasteDescription: "I enjoy thought-provoking sci-fi with strong visuals and complex characters.",
+        },
+        context: {
+          listName: list.name,
+          listMovies: list.movies.map(m => ({ title: m.title, year: m.year })),
+        }
       };
-      const result = await generateListSuggestions(input);
-      setSuggestedMovies(result.suggestedMovies);
-      if (result.suggestedMovies.length === 0) {
+      const result = await getRecommendations(input);
+      const suggestions = result.suggestedMovies || [];
+      setSuggestedMovies(suggestions);
+      if (suggestions.length === 0) {
         toast({ title: "No new suggestions", description: "AI couldn't find any new suggestions for this list right now." });
       }
     } catch (error) {
@@ -182,6 +192,7 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
                 </Button>
                 {suggestedMovies.length > 0 && (
                   <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">Recommended for you:</h4>
                     {suggestedMovies.map((title, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
                         <span className="text-sm font-medium">{title}</span>
@@ -193,7 +204,7 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
                   </div>
                 )}
                 {!isLoadingSuggestions && suggestedMovies.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center">No new suggestions at the moment, or click above to generate.</p>
+                  <p className="text-sm text-muted-foreground text-center">Click above to generate suggestions.</p>
                 )}
               </CardContent>
             </Card>
