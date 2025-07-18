@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  next-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: filmfriend_next_app
+    ports:
+      - "3000:9002"
+    volumes:
+      - ./src:/app/src
+      - /app/node_modules
+      - /app/src/node_modules
+      - /app/src/.next
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - NEXT_PUBLIC_TMDB_API_KEY=${NEXT_PUBLIC_TMDB_API_KEY}
+    depends_on:
+      - postgres-db
+      - redis-cache
+    restart: always
+
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: filmfriend_postgres_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: filmfriend_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: filmfriend_redis_cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: filmfriend_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres-db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: always
+
+volumes:
+  postgres_data:
+  redis_data:
+  pgadmin_data:
