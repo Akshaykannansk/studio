@@ -13,8 +13,7 @@ import Link from 'next/link';
 import { Clapperboard } from 'lucide-react';
 
 // In a real app, you would use an environment variable for the API key.
-// For this prototype, we'll use a placeholder.
-const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || "d14c8332b8134914d3c3571214c76949";
+const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
 export default function LandingPage() {
   const [popularMovies, setPopularMovies] = useState<Movie[]>([]);
@@ -23,6 +22,11 @@ export default function LandingPage() {
 
   useEffect(() => {
     const fetchPopularMovies = async () => {
+      if (!TMDB_API_KEY) {
+        toast({ title: "Configuration Error", description: "TMDB API Key is not configured.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         // In a real app, this fetch would go to your Next.js backend, which then calls TMDB.

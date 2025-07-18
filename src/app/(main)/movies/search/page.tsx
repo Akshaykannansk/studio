@@ -9,7 +9,7 @@ import type { Movie, TMDbMovieResult } from '@/types/filmfriend';
 import { SearchIcon, Loader2, Film } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || "d14c8332b8134914d3c3571214c76949"; // Replace with your actual key or use env var
+const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
 export default function MovieSearchPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,6 +19,12 @@ export default function MovieSearchPage() {
   const { toast } = useToast();
 
   const fetchPopularMovies = async () => {
+    if (!TMDB_API_KEY) {
+      toast({ title: "Configuration Error", description: "TMDB API Key is not configured.", variant: "destructive" });
+      setIsLoading(false);
+      setInitialLoad(false);
+      return;
+    }
     setIsLoading(true);
     try {
       // IMPORTANT: This is a placeholder for a backend call. 
@@ -61,6 +67,10 @@ export default function MovieSearchPage() {
     if (!searchTerm.trim()) {
         fetchPopularMovies(); // if search is cleared, show popular again
         return;
+    }
+    if (!TMDB_API_KEY) {
+      toast({ title: "Configuration Error", description: "TMDB API Key is not configured.", variant: "destructive" });
+      return;
     }
     setIsLoading(true);
     setInitialLoad(false);
