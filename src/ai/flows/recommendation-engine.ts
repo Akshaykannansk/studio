@@ -27,7 +27,7 @@ const UserProfileSchema = z.object({
   tasteDescription: z.string().describe("A short description of the user's taste in movies."),
 });
 
-export const RecommendationInputSchema = z.object({
+const RecommendationInputSchema = z.object({
   userProfile: UserProfileSchema,
   recommendationType: z.enum(['LIST_SUGGESTIONS', 'WATCH_NEXT', 'SIMILAR_USERS']),
   // Context for specific recommendation types
@@ -38,7 +38,7 @@ export const RecommendationInputSchema = z.object({
 });
 export type RecommendationInput = z.infer<typeof RecommendationInputSchema>;
 
-export const RecommendationOutputSchema = z.object({
+const RecommendationOutputSchema = z.object({
   suggestedMovies: z.array(z.string()).optional().describe("A list of suggested movie titles."),
   similarUsers: z.array(z.object({
     username: z.string(),
