@@ -22,7 +22,7 @@ async function createTables() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
-
+    
     // Movies Table (to store basic movie info we've seen)
     await client.query(`
       CREATE TABLE IF NOT EXISTS movies (
@@ -34,10 +34,15 @@ async function createTables() {
       );
     `);
 
+    // Must create type before using it in a table
+    const typeResult = await client.query("SELECT 1 FROM pg_type WHERE typname = 'watch_status'");
+    if (typeResult.rowCount === 0) {
+      await client.query(`
+        CREATE TYPE watch_status AS ENUM ('watched', 'want_to_watch', 'rewatched');
+      `);
+    }
+
     // User Movie Interactions (Likes, Watch Status)
-    await client.query(`
-      CREATE TYPE watch_status AS ENUM ('watched', 'want_to_watch', 'rewatched');
-    `);
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_movie_interactions (
         user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
