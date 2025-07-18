@@ -10,7 +10,6 @@ import type { Movie, MovieList, User } from '@/types/filmfriend';
 import { Edit3, PlusCircle, Share2, ThumbsUp, MessageSquare, Trash2, Search, Loader2, Lightbulb, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { MovieCard } from '@/components/movie-card';
-import { getRecommendations, type RecommendationInput } from '@/ai/flows/recommendation-engine';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -61,9 +60,9 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
 
   const handleGetSuggestions = async () => {
     setIsLoadingSuggestions(true);
-    setSuggestedMovies([]);
-    try {
-      const input: RecommendationInput = {
+    
+    // This is where you would call your FastAPI backend.
+    const recommendationInput = {
         recommendationType: 'LIST_SUGGESTIONS',
         userProfile: {
             watchedMovies: [{title: 'Inception'}, {title: 'The Matrix'}],
@@ -76,32 +75,34 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
           listMovies: list.movies.map(m => ({ title: m.title, year: m.year })),
         }
       };
-      const result = await getRecommendations(input);
-      const suggestions = result.suggestedMovies || [];
-      setSuggestedMovies(suggestions);
-      if (suggestions.length === 0) {
-        toast({ title: "No new suggestions", description: "AI couldn't find any new suggestions for this list right now." });
-      }
-    } catch (error) {
-      console.error("Error generating suggestions:", error);
-      toast({ title: "Error", description: "Could not generate movie suggestions.", variant: "destructive" });
-    } finally {
-      setIsLoadingSuggestions(false);
-    }
+    
+    console.log("Would send this to FastAPI:", recommendationInput);
+
+    // Simulating an API call and response
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    const mockSuggestions = ["Ex Machina", "Annihilation", "Children of Men"];
+    
+    setSuggestedMovies(mockSuggestions);
+    setIsLoadingSuggestions(false);
+    
+    toast({ title: "Suggestions Loaded (Simulated)", description: "This is mock data. Connect to your backend." });
+
   };
 
   // Placeholder for adding a movie to the list
   const handleAddMovieToList = (movieTitle: string) => {
-    console.log(`Adding ${movieTitle} to list`);
+    console.log(`[ACTION] Add '${movieTitle}' to list '${list.name}'`);
+    // This is where you would make an API call to your backend.
     toast({ title: "Movie Added (Simulated)", description: `${movieTitle} would be added to the list.`});
     setSuggestedMovies(prev => prev.filter(title => title !== movieTitle)); // Remove from suggestions
   }
 
   // Placeholder for removing a movie from the list
-  const handleRemoveMovie = (movieId: string) => {
-    console.log(`Removing movie ${movieId} from list`);
-    toast({ title: "Movie Removed (Simulated)", description: `Movie ${movieId} would be removed.` });
-    // Here you would update the list.movies state
+  const handleRemoveMovie = (movieId: string, movieTitle: string) => {
+    console.log(`[ACTION] Remove movie ${movieId} ('${movieTitle}') from list`);
+    // This is where you would make an API call to your backend.
+    toast({ title: "Movie Removed (Simulated)", description: `${movieTitle} would be removed.` });
+    // Here you would update the list.movies state based on a successful API call.
   }
 
   return (
@@ -161,7 +162,7 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleRemoveMovie(movie.id)}>Remove</AlertDialogAction>
+                          <AlertDialogAction onClick={() => handleRemoveMovie(movie.id, movie.title)}>Remove</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -183,7 +184,7 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2"><Lightbulb className="text-yellow-400" /> AI Suggestions</CardTitle>
-                <CardDescription>Discover movies you might like to add to this list.</CardDescription>
+                <CardDescription>Get suggestions for this list from your backend.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onClick={handleGetSuggestions} disabled={isLoadingSuggestions} className="w-full mb-4">

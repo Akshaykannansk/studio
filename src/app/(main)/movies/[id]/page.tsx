@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Movie, Review as ReviewType, User } from '@/types/filmfriend';
-import { Eye, Bookmark, Film, Heart, MessageSquare, PlusCircle, Star as StarIcon, ThumbsUp, UserCircle, Users, History } from 'lucide-react';
+import { Eye, Bookmark, Film, Heart, MessageSquare, PlusCircle, Star as StarIcon, ThumbsUp, UserCircle, Users, History, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { MovieCard } from '@/components/movie-card';
@@ -17,16 +17,16 @@ import { StarRating } from '@/components/star-rating';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { likeMovieAction, setWatchStatusAction, submitReviewAction } from '@/app/actions/movie-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState, useTransition, useActionState } from 'react';
 import { cn } from '@/lib/utils';
 import type { WatchStatus } from '@/lib/db/schema';
+import { likeMovieAction, setWatchStatusAction, submitReviewAction } from '@/app/actions/movie-actions';
 
 
 // Mock data for a single movie
 const mockMovie: Movie = {
-  id: '1',
+  id: '335983', // TMDB ID for Blade Runner 2049
   title: 'Blade Runner 2049',
   year: 2017,
   posterUrl: 'https://placehold.co/400x600.png?text=Blade+Runner+2049',
@@ -57,25 +57,36 @@ const mockSimilarMovies: Movie[] = [
 function ReviewForm({ movie, onReviewSubmit }: { movie: Movie, onReviewSubmit: () => void }) {
   const { toast } = useToast();
   const [rating, setRating] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const initialState = { success: false, message: '' };
-  const [state, dispatch] = useActionState(submitReviewAction, initialState);
-
-  useEffect(() => {
-    if (state.message) {
-      toast({
-        title: state.success ? 'Success' : 'Error',
-        description: state.message,
-        variant: state.success ? 'default' : 'destructive',
-      });
-      if(state.success) {
-        onReviewSubmit();
-      }
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    const formData = new FormData(event.currentTarget);
+    
+    // This is where you would call your FastAPI backend.
+    const reviewData = {
+      movieId: formData.get('movieId') as string,
+      movieTitle: formData.get('movieTitle') as string,
+      rating: parseFloat(formData.get('rating') as string),
+      text: formData.get('reviewText') as string,
+      isPublic: formData.get('isPublic') === 'on',
     }
-  }, [state, toast, onReviewSubmit]);
+    console.log('[ACTION] Would submit review to FastAPI:', reviewData);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
+
+    toast({
+      title: 'Review Submitted (Simulated)',
+      description: "Your review would be saved to your backend.",
+    });
+    onReviewSubmit();
+  };
 
   return (
-    <form action={dispatch} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="movieId" value={movie.id} />
       <input type="hidden" name="movieTitle" value={movie.title} />
       <input type="hidden" name="rating" value={rating} />
@@ -89,8 +100,8 @@ function ReviewForm({ movie, onReviewSubmit }: { movie: Movie, onReviewSubmit: (
         <Checkbox id="isPublic" name="isPublic" defaultChecked />
         <Label htmlFor="isPublic" className="text-sm font-normal">Make review public</Label>
       </div>
-      <Button type="submit" className="w-full" disabled={rating === 0}>
-        Submit Review
+      <Button type="submit" className="w-full" disabled={rating === 0 || isSubmitting}>
+        {isSubmitting ? <Loader2 className="animate-spin" /> : 'Submit Review'}
       </Button>
     </form>
   )
@@ -105,30 +116,32 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
   const [movie, setMovie] = useState<Movie>(mockMovie);
 
   const handleLike = async () => {
+    const newLikedStatus = !movie.isLiked;
+    
+    // Optimistically update UI
+    setMovie(m => ({ ...m, isLiked: newLikedStatus }));
+    toast({ title: newLikedStatus ? 'Liked!' : 'Unliked', description: `${movie.title} has been updated.` });
+    
+    // This is where you would call your FastAPI backend.
     startTransition(async () => {
-      const newLikedStatus = !movie.isLiked;
-      // Optimistically update UI
-      setMovie(m => ({ ...m, isLiked: newLikedStatus }));
-      const result = await likeMovieAction(movie.id, newLikedStatus);
-      if (!result.success) {
-        // Revert on failure
-        setMovie(m => ({ ...m, isLiked: !newLikedStatus }));
-        toast({ title: "Error", description: result.message, variant: 'destructive' });
-      }
+      console.log(`[ACTION] Call FastAPI to like movie ${movie.id} (isLiked: ${newLikedStatus})`);
+      await likeMovieAction(movie.id, newLikedStatus); // This now just logs to console
     });
   }
   
   const handleSetWatchStatus = async (status: WatchStatus) => {
-    startTransition(async () => {
-        const originalStatus = movie.watchStatus;
-        const newStatus = movie.watchStatus === status ? undefined : status;
-        setMovie(m => ({ ...m, watchStatus: newStatus as any }));
-        const result = await setWatchStatusAction(movie.id, newStatus as WatchStatus);
-        if(!result.success) {
-            setMovie(m => ({ ...m, watchStatus: originalStatus }));
-            toast({ title: "Error", description: result.message, variant: 'destructive' });
-        }
-    });
+      const originalStatus = movie.watchStatus;
+      const newStatus = movie.watchStatus === status ? undefined : status;
+      
+      // Optimistically update UI
+      setMovie(m => ({ ...m, watchStatus: newStatus }));
+      toast({ title: 'Status Updated', description: `${movie.title} status set to ${newStatus || 'none'}.` });
+
+      // This is where you would call your FastAPI backend.
+      startTransition(async () => {
+          console.log(`[ACTION] Call FastAPI to set status for ${movie.id} to ${newStatus}`);
+          await setWatchStatusAction(movie.id, newStatus); // This now just logs to console
+      });
   }
 
   const [hasReviewed, setHasReviewed] = useState(false); // mock state
@@ -302,7 +315,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                   <CardHeader><CardTitle>Additional Details</CardTitle></CardHeader>
                   <CardContent className="space-y-2">
                     <p><strong>Release Year:</strong> {movie.year}</p>
-                    <p><strong>TMDB ID:</strong> {movie.id}</p>
+                    <p><strong>TMDB ID:</strong> {params.id}</p>
                     {/* Add more details like runtime, language, country etc. */}
                   </CardContent>
                 </Card>

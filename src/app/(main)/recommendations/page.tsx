@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react';
 import { MovieCard } from '@/components/movie-card';
 import { PageHeader } from '@/components/page-header';
-import type { Movie, User } from '@/types/filmfriend';
+import type { Movie } from '@/types/filmfriend';
 import { ThumbsUp, Users, Search, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { getRecommendations, type RecommendationInput } from '@/ai/flows/recommendation-engine';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -27,6 +26,7 @@ const findMovieByTitle = async (title: string): Promise<Movie | null> => {
         { id: 'rec2', title: 'The Lighthouse', year: 2019, posterUrl: 'https://placehold.co/300x450.png?text=Lighthouse', averageRating: 4.1, dataAiHint: "psychological horror" },
         { id: 'rec3', title: 'Portrait of a Lady on Fire', year: 2019, posterUrl: 'https://placehold.co/300x450.png?text=Lady+On+Fire', averageRating: 4.6, dataAiHint: "french romance" },
         { id: 'rec4', title: 'Mad Max: Fury Road', year: 2015, posterUrl: 'https://placehold.co/300x450.png?text=Mad+Max', averageRating: 4.5, dataAiHint: "post apocalyptic" },
+        { id: 'rec5', title: 'Parasite', year: 2019, posterUrl: 'https://placehold.co/300x450.png?text=Parasite', averageRating: 4.6, dataAiHint: "korean thriller" },
     ];
     const found = mockDb.find(m => m.title.toLowerCase() === title.toLowerCase());
     return found || { id: `new-${title.replace(/\s+/g, '')}`, title: title, posterUrl: `https://placehold.co/300x450.png?text=${title.replace(/\s+/g, '+')}`, dataAiHint: "movie poster"};
@@ -43,30 +43,39 @@ export default function RecommendationsPage() {
         setIsLoading(true);
         setWatchNext([]);
         setSimilarUsers([]);
-        try {
-            const input: RecommendationInput = {
-                // In a real app, this profile would be dynamically loaded for the current user
-                userProfile: {
-                    watchedMovies: [{ title: 'Inception', year: 2010 }, { title: 'The Matrix', year: 1999 }, {title: 'Pulp Fiction'}],
-                    likedMovies: [{ title: 'Interstellar', year: 2014 }, {title: 'Parasite'}],
-                    movieLists: [
-                        { name: 'Sci-Fi Masterpieces', movies: [{ title: 'Blade Runner 2049' }, { title: 'Dune' }] }
-                    ],
-                    tasteDescription: "Loves mind-bending sci-fi, intense thrillers, and critically acclaimed foreign films.",
-                },
-                recommendationType: 'WATCH_NEXT', // We'll get watch next first
-            };
+        
+        // This is where you would call your FastAPI backend.
+        const recommendationInput = {
+            userProfile: {
+                watchedMovies: [{ title: 'Inception', year: 2010 }, { title: 'The Matrix', year: 1999 }, {title: 'Pulp Fiction'}],
+                likedMovies: [{ title: 'Interstellar', year: 2014 }, {title: 'Parasite'}],
+                movieLists: [
+                    { name: 'Sci-Fi Masterpieces', movies: [{ title: 'Blade Runner 2049' }, { title: 'Dune' }] }
+                ],
+                tasteDescription: "Loves mind-bending sci-fi, intense thrillers, and critically acclaimed foreign films.",
+            },
+        };
 
-            // Get "Watch Next" movies
-            const watchNextResult = await getRecommendations(input);
-            const movieTitles = watchNextResult.suggestedMovies || [];
-            const moviePromises = movieTitles.map(findMovieByTitle);
+        try {
+            console.log("Would send this to FastAPI for WATCH_NEXT:", {...recommendationInput, recommendationType: 'WATCH_NEXT'});
+            // Simulating API call for Watch Next
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const mockMovieTitles = ["The Lighthouse", "Mad Max: Fury Road", "Parasite"];
+            const moviePromises = mockMovieTitles.map(findMovieByTitle);
             const resolvedMovies = (await Promise.all(moviePromises)).filter((m): m is Movie => m !== null);
             setWatchNext(resolvedMovies);
 
-            // Get "Similar Users"
-            const similarUsersResult = await getRecommendations({ ...input, recommendationType: 'SIMILAR_USERS' });
-            setSimilarUsers(similarUsersResult.similarUsers || []);
+
+            console.log("Would send this to FastAPI for SIMILAR_USERS:", {...recommendationInput, recommendationType: 'SIMILAR_USERS'});
+            // Simulating API call for Similar Users
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const mockSimilarUsers: SimilarUser[] = [
+                { username: "@Cosmic_Critic", reason: "Shares your love for grand-scale sci-fi epics and complex narratives." },
+                { username: "@Noir_Nights", reason: "Appreciates stylish thrillers and isn't afraid of a little ambiguity." }
+            ];
+            setSimilarUsers(mockSimilarUsers);
+
+            toast({ title: "Recommendations Loaded (Simulated)", description: "This is mock data. Connect to your backend." });
 
         } catch (error) {
             console.error("Error getting recommendations:", error);
