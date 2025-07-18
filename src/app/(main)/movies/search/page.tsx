@@ -18,7 +18,7 @@ export default function MovieSearchPage() {
   const [initialLoad, setInitialLoad] = useState(true);
   const { toast } = useToast();
 
-  const fetchPopularMovies = async () => {
+  const fetchDefaultMovies = async () => {
     if (!TMDB_API_KEY) {
       toast({ title: "Configuration Error", description: "TMDB API Key is not configured.", variant: "destructive" });
       setIsLoading(false);
@@ -30,9 +30,9 @@ export default function MovieSearchPage() {
       // IMPORTANT: This is a placeholder for a backend call. 
       // Direct API calls from the client are not secure for keys.
       // In a real app, this fetch would go to your Next.js backend, which then calls TMDB.
-      const response = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+      const response = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=en-US&sort_by=popularity.desc&page=1&include_adult=false`);
       if (!response.ok) {
-        throw new Error('Failed to fetch popular movies');
+        throw new Error('Failed to fetch movies');
       }
       const data = await response.json();
       const movies = data.results.slice(0, 12).map((movie: TMDbMovieResult) => ({
@@ -48,7 +48,7 @@ export default function MovieSearchPage() {
       setResults(movies);
     } catch (error) {
       console.error(error);
-      toast({ title: "Error", description: "Could not fetch popular movies.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not fetch movies.", variant: "destructive" });
       setResults([]);
     } finally {
       setIsLoading(false);
@@ -57,7 +57,7 @@ export default function MovieSearchPage() {
   };
   
   useEffect(() => {
-    fetchPopularMovies();
+    fetchDefaultMovies();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -65,7 +65,7 @@ export default function MovieSearchPage() {
   const handleSearch = async (e?: React.FormEvent<HTMLFormElement>) => {
     if (e) e.preventDefault();
     if (!searchTerm.trim()) {
-        fetchPopularMovies(); // if search is cleared, show popular again
+        fetchDefaultMovies(); // if search is cleared, show popular again
         return;
     }
     if (!TMDB_API_KEY) {

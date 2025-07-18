@@ -30,7 +30,7 @@ export default function LandingPage() {
       setIsLoading(true);
       try {
         // In a real app, this fetch would go to your Next.js backend, which then calls TMDB.
-        const response = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+        const response = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=en-US&sort_by=popularity.desc&page=1&include_adult=false`);
         if (!response.ok) {
           throw new Error('Failed to fetch popular movies');
         }
