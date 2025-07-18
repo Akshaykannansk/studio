@@ -4,10 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Movie, User, Review as ReviewType, MovieList as MovieListType } from '@/types/filmfriend';
-import { Edit3, Film, List, MessageSquare, Users, UserPlus, CalendarDays } from 'lucide-react';
+import { Edit3, Film, List, MessageSquare, Heart, Eye, Bookmark, History } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MovieCard } from '@/components/movie-card';
 import { StarRating } from '@/components/star-rating';
 
 // Mock data
@@ -28,10 +27,12 @@ const favoriteMovies: Movie[] = [
   { id: 'fav4', title: 'The Godfather', year: 1972, posterUrl: 'https://placehold.co/200x300.png?text=The+Godfather', dataAiHint: "mafia drama" },
 ];
 
-const mockActivity: {type: string, item: Movie | MovieListType | ReviewType, date: string}[] = [
+const mockActivity: {type: 'watched' | 'liked' | 'list_created' | 'reviewed' | 'watchlist', item: Movie | MovieListType | ReviewType, date: string}[] = [
     { type: 'watched', item: favoriteMovies[0], date: '2 days ago'},
+    { type: 'liked', item: favoriteMovies[2], date: '3 days ago'},
     { type: 'list_created', item: { id: 'list1', name: 'My Top 100 Thrillers', movies: [], owner: mockUser, isPublic: true, createdAt: '2023-10-10', updatedAt: '2023-10-10' }, date: '5 days ago'},
     { type: 'reviewed', item: { id: 'rev1', movie: favoriteMovies[1], user: mockUser, rating: 5, text: 'A masterpiece!', isPublic: true, createdAt: '2023-10-08' }, date: '1 week ago'},
+    { type: 'watchlist', item: favoriteMovies[3], date: '2 weeks ago'},
 ];
 
 const mockUserLists: MovieListType[] = [
@@ -44,13 +45,28 @@ const mockUserReviews: ReviewType[] = [
     { id: 'rev11', movie: favoriteMovies[3], user: mockUser, rating: 5, text: 'An offer you can\'t refuse. Perfection.', isPublic: true, createdAt: '2023-04-10', likesCount: 35 },
 ];
 
+const activityIcons: Record<string, React.ReactElement> = {
+    watched: <Eye className="h-5 w-5 text-primary mt-1" />,
+    liked: <Heart className="h-5 w-5 text-red-500 mt-1" />,
+    list_created: <List className="h-5 w-5 text-accent mt-1" />,
+    reviewed: <MessageSquare className="h-5 w-5 text-green-500 mt-1" />,
+    watchlist: <Bookmark className="h-5 w-5 text-blue-500 mt-1" />,
+};
+
+const activityText: Record<string, (item: any) => string> = {
+    watched: (item: Movie) => `Watched ${item.title}`,
+    liked: (item: Movie) => `Liked ${item.title}`,
+    list_created: (item: MovieListType) => `Created list: ${item.name}`,
+    reviewed: (item: ReviewType) => `Reviewed ${item.movie.title}`,
+    watchlist: (item: Movie) => `Added ${item.title} to their watchlist`,
+};
+
 
 export default function ProfilePage() {
   return (
     <div>
       <PageHeader title={mockUser.name || mockUser.username} description={`@${mockUser.username}`}>
         <Button variant="outline"><Edit3 className="mr-2 h-4 w-4" /> Edit Profile</Button>
-        {/* <Button><UserPlus className="mr-2 h-4 w-4" /> Follow</Button> */}
       </PageHeader>
       <div className="container mx-auto p-4 md:p-6 space-y-8">
         <Card>
@@ -63,11 +79,11 @@ export default function ProfilePage() {
             </Avatar>
             <div className="flex-1 text-center md:text-left">
               <p className="text-muted-foreground">{mockUser.bio}</p>
-              <div className="mt-4 flex justify-center md:justify-start gap-4 text-sm">
-                <span><strong className="text-foreground">{mockUser.followersCount}</strong> Followers</span>
-                <span><strong className="text-foreground">{mockUser.followingCount}</strong> Following</span>
-                {/* Placeholder for total movies watched */}
-                <span><strong className="text-foreground">123</strong> Films</span>
+              <div className="mt-4 flex justify-center md:justify-start gap-6 text-sm">
+                <div className="text-center"><strong className="block text-foreground text-lg">1.2k</strong><span>Followers</span></div>
+                <div className="text-center"><strong className="block text-foreground text-lg">340</strong><span>Following</span></div>
+                <div className="text-center"><strong className="block text-foreground text-lg">123</strong><span>Films</span></div>
+                <div className="text-center"><strong className="block text-foreground text-lg">42</strong><span>Lists</span></div>
               </div>
             </div>
           </CardContent>
@@ -104,19 +120,13 @@ export default function ProfilePage() {
           </TabsList>
           <TabsContent value="activity">
             <Card>
-              <CardHeader><CardTitle>Recent Activity</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="flex items-center gap-2"><History /> Recent Activity</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 {mockActivity.map((activity, index) => (
                   <div key={index} className="flex items-start gap-3 p-3 border-b last:border-b-0">
-                    {activity.type === 'watched' && <Film className="h-5 w-5 text-primary mt-1" />}
-                    {activity.type === 'list_created' && <List className="h-5 w-5 text-accent mt-1" />}
-                    {activity.type === 'reviewed' && <MessageSquare className="h-5 w-5 text-green-500 mt-1" />}
+                    {activityIcons[activity.type]}
                     <div>
-                      <p className="text-sm">
-                        {activity.type === 'watched' && `Watched ${(activity.item as Movie).title}`}
-                        {activity.type === 'list_created' && `Created list: ${(activity.item as MovieListType).name}`}
-                        {activity.type === 'reviewed' && `Reviewed ${(activity.item as ReviewType).movie.title}`}
-                      </p>
+                      <p className="text-sm">{activityText[activity.type](activity.item)}</p>
                       <p className="text-xs text-muted-foreground">{activity.date}</p>
                     </div>
                   </div>

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Movie, Review as ReviewType, User } from '@/types/filmfriend';
-import { CalendarDays, Clock, Film, Heart, MessageSquare, PlusCircle, Star as StarIcon, ThumbsUp, UserCircle, Users } from 'lucide-react';
+import { Eye, Bookmark, Film, Heart, MessageSquare, PlusCircle, Star as StarIcon, ThumbsUp, UserCircle, Users, History } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { MovieCard } from '@/components/movie-card';
@@ -17,10 +17,13 @@ import { StarRating } from '@/components/star-rating';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormState } from 'react-dom';
 import { likeMovieAction, setWatchStatusAction, submitReviewAction } from '@/app/actions/movie-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
+import { cn } from '@/lib/utils';
+import type { WatchStatus } from '@/lib/db/schema';
+
 
 // Mock data for a single movie
 const mockMovie: Movie = {
@@ -52,13 +55,12 @@ const mockSimilarMovies: Movie[] = [
 ];
 
 
-function ReviewForm({ movie }: { movie: Movie }) {
+function ReviewForm({ movie, onReviewSubmit }: { movie: Movie, onReviewSubmit: () => void }) {
   const { toast } = useToast();
   const [rating, setRating] = useState(0);
 
   const initialState = { success: false, message: '' };
   const [state, dispatch] = useFormState(submitReviewAction, initialState);
-  const { pending } = useFormStatus();
 
   useEffect(() => {
     if (state.message) {
@@ -67,8 +69,11 @@ function ReviewForm({ movie }: { movie: Movie }) {
         description: state.message,
         variant: state.success ? 'default' : 'destructive',
       });
+      if(state.success) {
+        onReviewSubmit();
+      }
     }
-  }, [state, toast]);
+  }, [state, toast, onReviewSubmit]);
 
   return (
     <form action={dispatch} className="space-y-4">
@@ -85,8 +90,8 @@ function ReviewForm({ movie }: { movie: Movie }) {
         <Checkbox id="isPublic" name="isPublic" defaultChecked />
         <Label htmlFor="isPublic" className="text-sm font-normal">Make review public</Label>
       </div>
-      <Button type="submit" className="w-full" disabled={pending || rating === 0}>
-        {pending ? 'Submitting...' : 'Submit Review'}
+      <Button type="submit" className="w-full" disabled={rating === 0}>
+        Submit Review
       </Button>
     </form>
   )
@@ -94,30 +99,41 @@ function ReviewForm({ movie }: { movie: Movie }) {
 
 
 export default function MovieDetailPage({ params }: { params: { id: string } }) {
-  // In a real app, fetch movie data using params.id
-  // This would include user interaction data like `isLiked`, `userRating`, `watchStatus`
-  const movie = mockMovie; // Using mock data for now
   const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
+
+  // In a real app, this would be fetched from the DB, including user interaction data.
+  const [movie, setMovie] = useState<Movie>(mockMovie);
 
   const handleLike = async () => {
-    const result = await likeMovieAction(movie, !movie.isLiked);
-    toast({
-      title: result.success ? 'Success' : 'Error',
-      description: result.message,
-      variant: result.success ? 'default' : 'destructive'
+    startTransition(async () => {
+      const newLikedStatus = !movie.isLiked;
+      // Optimistically update UI
+      setMovie(m => ({ ...m, isLiked: newLikedStatus }));
+      const result = await likeMovieAction(movie.id, newLikedStatus);
+      if (!result.success) {
+        // Revert on failure
+        setMovie(m => ({ ...m, isLiked: !newLikedStatus }));
+        toast({ title: "Error", description: result.message, variant: 'destructive' });
+      }
     });
-    // In a real app, you'd update the state based on the result
   }
   
-  const handleSetWatchStatus = async (status: 'watched' | 'want-to-watch') => {
-      const result = await setWatchStatusAction(movie, status);
-      toast({
-          title: result.success ? 'Success' : 'Error',
-          description: result.message,
-          variant: result.success ? 'default' : 'destructive'
-      })
+  const handleSetWatchStatus = async (status: WatchStatus) => {
+    startTransition(async () => {
+        const originalStatus = movie.watchStatus;
+        const newStatus = movie.watchStatus === status ? undefined : status;
+        setMovie(m => ({ ...m, watchStatus: newStatus as any }));
+        const result = await setWatchStatusAction(movie.id, newStatus as WatchStatus);
+        if(!result.success) {
+            setMovie(m => ({ ...m, watchStatus: originalStatus }));
+            toast({ title: "Error", description: result.message, variant: 'destructive' });
+        }
+    });
   }
 
+  const [hasReviewed, setHasReviewed] = useState(false); // mock state
+  
   return (
     <div>
       <PageHeader title={movie.title} description={`${movie.year} • Directed by ${movie.director}`} />
@@ -135,35 +151,51 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                 data-ai-hint={movie.dataAiHint}
                 priority // Prioritize loading main movie poster
               />
-               <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white hover:text-red-500 rounded-full h-10 w-10"
-                onClick={handleLike}
-               >
-                <Heart className={cn("h-5 w-5", movie.isLiked && "fill-red-500 text-red-500")} />
-              </Button>
             </Card>
             
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-xl">Log or Review</CardTitle>
+                    <CardTitle className="text-xl flex items-center gap-2"><History className="w-5 h-5 text-primary" /> Log, Rate, Review</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                     <div className="flex gap-2 flex-wrap">
+                     <div className="flex justify-around gap-2 flex-wrap">
                         <Button 
-                            variant={movie.watchStatus === 'watched' ? 'default' : 'outline'}
-                            onClick={() => handleSetWatchStatus('watched')}
+                            variant="ghost" 
+                            className={cn("flex flex-col h-auto p-2", movie.isLiked && "text-red-500")}
+                            onClick={handleLike}
+                            disabled={isPending}
                         >
-                            <Film className="mr-2 h-4 w-4" /> Watched
+                            <Heart className={cn("h-6 w-6", movie.isLiked && "fill-current")} />
+                            <span className="text-xs mt-1">Like</span>
                         </Button>
                         <Button 
-                            variant={movie.watchStatus === 'want-to-watch' ? 'default' : 'outline'}
-                            onClick={() => handleSetWatchStatus('want-to-watch')}
+                            variant="ghost" 
+                            className={cn("flex flex-col h-auto p-2", movie.watchStatus === 'watched' && "text-primary")}
+                            onClick={() => handleSetWatchStatus('watched')}
+                            disabled={isPending}
                         >
-                            <Clock className="mr-2 h-4 w-4" /> Want to Watch
+                            <Eye className="h-6 w-6" />
+                            <span className="text-xs mt-1">Watched</span>
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            className={cn("flex flex-col h-auto p-2", movie.watchStatus === 'want-to-watch' && "text-primary")}
+                            onClick={() => handleSetWatchStatus('want-to-watch')}
+                            disabled={isPending}
+                        >
+                            <Bookmark className="h-6 w-6" />
+                            <span className="text-xs mt-1">Watchlist</span>
+                        </Button>
+                         <Button 
+                            variant="ghost" 
+                            className={cn("flex flex-col h-auto p-2", hasReviewed && "text-primary")}
+                            disabled={isPending}
+                        >
+                            <MessageSquare className="h-6 w-6" />
+                            <span className="text-xs mt-1">Review</span>
                         </Button>
                     </div>
+                    <Separator />
                     <Button variant="secondary" className="w-full"><PlusCircle className="mr-2 h-4 w-4" /> Add to List</Button>
                 </CardContent>
             </Card>
@@ -171,7 +203,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
             <Card>
                 <CardHeader><CardTitle className="text-xl">Write a Review</CardTitle></CardHeader>
                 <CardContent>
-                    <ReviewForm movie={movie} />
+                    <ReviewForm movie={movie} onReviewSubmit={() => setHasReviewed(true)} />
                 </CardContent>
             </Card>
           </div>

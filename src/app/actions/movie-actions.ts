@@ -11,9 +11,9 @@ const MOCK_USER_ID = '1';
 /**
  * Server action to "like" a movie.
  */
-export async function likeMovieAction(movie: Movie, isLiked: boolean) {
+export async function likeMovieAction(movieId: string, isLiked: boolean) {
   try {
-    await getOrInsertMovie(movie);
+    const movie = await getOrInsertMovie({ id: movieId, title: 'Unknown Movie' });
     await setMovieInteraction({
       userId: MOCK_USER_ID,
       movieId: movie.id,
@@ -30,15 +30,15 @@ export async function likeMovieAction(movie: Movie, isLiked: boolean) {
 /**
  * Server action to set the watch status of a movie.
  */
-export async function setWatchStatusAction(movie: Movie, status: WatchStatus) {
+export async function setWatchStatusAction(movieId: string, status: WatchStatus) {
     try {
-        await getOrInsertMovie(movie);
+        const movie = await getOrInsertMovie({ id: movieId, title: 'Unknown Movie' });
         await setMovieInteraction({
             userId: MOCK_USER_ID,
             movieId: movie.id,
             status: status
         });
-        revalidatePath(`/movies/${movie.id}`);
+        revalidatePath(`/movies/${movieId}`);
         return { success: true, message: `Status set to ${status}`};
     } catch (error) {
         console.error('Error setting watch status:', error);
@@ -50,7 +50,7 @@ export async function setWatchStatusAction(movie: Movie, status: WatchStatus) {
 /**
  * Server action to add or update a review for a movie.
  */
-export async function submitReviewAction(formData: FormData) {
+export async function submitReviewAction(prevState: any, formData: FormData) {
   try {
     const movieId = formData.get('movieId') as string;
     const movieTitle = formData.get('movieTitle') as string;
