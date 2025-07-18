@@ -7,11 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: filmfriend_next_app
     ports:
-      - "3000:9002"
-    volumes:
-      - ./src:/app/src
-      - /app/node_modules
-      - /app/.next
+      - "3000:3000"
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
