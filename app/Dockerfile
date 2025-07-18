@@ -1,33 +1,34 @@
-# 1. Builder Stage
-FROM node:20-alpine AS builder
-
-# Set working directory
+# Base image for dependencies
+FROM node:20-alpine AS deps
 WORKDIR /app
-
-# Copy package.json and package-lock.json
-COPY package*.json ./
-
-# Install dependencies
+COPY package.json package-lock.json* ./
 RUN npm install
 
-# Copy source code
+# Builder stage
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build the Next.js app
+# Generate the Next.js build
+WORKDIR /app/src
 RUN npm run build
 
-# 2. Runner Stage
+# Runner stage
 FROM node:20-alpine AS runner
-
 WORKDIR /app
 
-# Copy built app from builder stage
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+ENV NODE_ENV=production
 
-# Expose port 9002
+# Copy built assets from the correct location
+COPY --from=builder /app/src/.next ./src/.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/src/package.json ./src/package.json
+COPY --from=builder /app/next.config.ts ./next.config.ts
+COPY --from=builder /app/public ./public
+
+WORKDIR /app/src
+
 EXPOSE 9002
 
-# Start the app
 CMD ["npm", "start"]

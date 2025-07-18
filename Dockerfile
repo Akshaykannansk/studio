@@ -1,22 +1,18 @@
-# Stage 1: Builder
-# Sets up the build environment
-FROM node:20-alpine AS base
+# 1. Base image for dependencies
+FROM node:20-alpine AS deps
 WORKDIR /app
-
-# Install dependencies
-FROM base AS deps
 COPY package.json package-lock.json* ./
 RUN npm install
 
-# Build the Next.js application
-FROM base AS builder
+# 2. Base image for building the application
+FROM node:20-alpine AS builder
+WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-# Stage 2: Runner
-# Creates the final, smaller image for running the application
-FROM base AS runner
+# 3. Final image for running the application
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
