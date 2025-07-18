@@ -23,6 +23,7 @@ export interface Movie {
   userRating?: number; // User's rating for this movie, 0.5 - 5.0
   averageRating?: number; // Average rating from all users
   watchStatus?: 'watched' | 'rewatched' | 'want-to-watch';
+  isLiked?: boolean; // Whether the current user has liked this movie
   dataAiHint?: string;
 }
 

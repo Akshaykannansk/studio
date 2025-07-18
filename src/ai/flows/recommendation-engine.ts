@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { cache } from '@/lib/cache';
 
 const MovieSchema = z.object({
   title: z.string(),
@@ -107,6 +108,18 @@ const recommendationFlow = ai.defineFlow(
     outputSchema: RecommendationOutputSchema,
   },
   async (input) => {
+    // Generate a cache key based on the input.
+    // NOTE: This is a simple hash. For production, a more robust hashing algorithm is recommended.
+    const cacheKey = `recs:${JSON.stringify(input)}`;
+
+    // Try to get the response from cache first.
+    const cachedResult = await cache.get<RecommendationOutput>(cacheKey);
+    if (cachedResult) {
+      console.log('Serving recommendations from cache.');
+      return cachedResult;
+    }
+
+    console.log('Generating new recommendations.');
     const promptInput = {
       ...input,
       isListSuggestions: input.recommendationType === 'LIST_SUGGESTIONS',
@@ -114,6 +127,12 @@ const recommendationFlow = ai.defineFlow(
       isSimilarUsers: input.recommendationType === 'SIMILAR_USERS',
     };
     const {output} = await prompt(promptInput);
+    
+    // Save the result to the cache for future requests.
+    if (output) {
+      await cache.set(cacheKey, output, 60 * 60 * 24); // Cache for 24 hours
+    }
+
     return output!;
   }
 );

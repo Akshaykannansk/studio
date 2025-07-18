@@ -1,3 +1,6 @@
+
+"use client";
+
 import { PageHeader } from '@/components/page-header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Movie, Review as ReviewType, User } from '@/types/filmfriend';
-import { CalendarDays, Clock, Film, MessageSquare, PlusCircle, Star as StarIcon, ThumbsUp, UserCircle, Users } from 'lucide-react';
+import { CalendarDays, Clock, Film, Heart, MessageSquare, PlusCircle, Star as StarIcon, ThumbsUp, UserCircle, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { MovieCard } from '@/components/movie-card';
@@ -14,6 +17,10 @@ import { StarRating } from '@/components/star-rating';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useFormState, useFormStatus } from 'react-dom';
+import { likeMovieAction, setWatchStatusAction, submitReviewAction } from '@/app/actions/movie-actions';
+import { useToast } from '@/hooks/use-toast';
+import { useEffect, useState } from 'react';
 
 // Mock data for a single movie
 const mockMovie: Movie = {
@@ -28,12 +35,13 @@ const mockMovie: Movie = {
   averageRating: 4.5,
   userRating: 4.0, // Example user rating
   watchStatus: 'watched',
+  isLiked: false, // Example like status
   dataAiHint: "cyberpunk future"
 };
 
 const mockReviews: ReviewType[] = [
-  { id: 'r1', user: { id: 'u1', username: 'critic101', name: 'Alex Reviewer', avatarUrl: 'https://placehold.co/40x40.png?text=AR' }, movie: mockMovie, rating: 5, text: 'A stunning visual masterpiece with a thought-provoking narrative. Villeneuve has outdone himself.', createdAt: '2023-10-26', likesCount: 152 },
-  { id: 'r2', user: { id: 'u2', username: 'moviebuff_22', name: 'Sarah Lee', avatarUrl: 'https://placehold.co/40x40.png?text=SL' }, movie: mockMovie, rating: 4.5, text: 'Loved the atmosphere and cinematography. The pacing was a bit slow at times, but overall a fantastic film.', createdAt: '2023-10-24', likesCount: 88 },
+  { id: 'r1', user: { id: 'u1', username: 'critic101', name: 'Alex Reviewer', avatarUrl: 'https://placehold.co/40x40.png?text=AR' }, movie: mockMovie, rating: 5, text: 'A stunning visual masterpiece with a thought-provoking narrative. Villeneuve has outdone himself.', createdAt: '2023-10-26', likesCount: 152, isPublic: true },
+  { id: 'r2', user: { id: 'u2', username: 'moviebuff_22', name: 'Sarah Lee', avatarUrl: 'https://placehold.co/40x40.png?text=SL' }, movie: mockMovie, rating: 4.5, text: 'Loved the atmosphere and cinematography. The pacing was a bit slow at times, but overall a fantastic film.', createdAt: '2023-10-24', likesCount: 88, isPublic: true },
 ];
 
 const mockSimilarMovies: Movie[] = [
@@ -43,9 +51,72 @@ const mockSimilarMovies: Movie[] = [
   { id: 'sim4', title: 'Ex Machina', year: 2014, posterUrl: 'https://placehold.co/300x450.png?text=Ex+Machina', averageRating: 4.2, dataAiHint: "artificial intelligence" },
 ];
 
+
+function ReviewForm({ movie }: { movie: Movie }) {
+  const { toast } = useToast();
+  const [rating, setRating] = useState(0);
+
+  const initialState = { success: false, message: '' };
+  const [state, dispatch] = useFormState(submitReviewAction, initialState);
+  const { pending } = useFormStatus();
+
+  useEffect(() => {
+    if (state.message) {
+      toast({
+        title: state.success ? 'Success' : 'Error',
+        description: state.message,
+        variant: state.success ? 'default' : 'destructive',
+      });
+    }
+  }, [state, toast]);
+
+  return (
+    <form action={dispatch} className="space-y-4">
+      <input type="hidden" name="movieId" value={movie.id} />
+      <input type="hidden" name="movieTitle" value={movie.title} />
+      <input type="hidden" name="rating" value={rating} />
+      
+      <div>
+        <Label>Your Rating:</Label>
+        <StarRating rating={rating} onRatingChange={setRating} size={24} />
+      </div>
+      <Textarea name="reviewText" placeholder={`What are your thoughts on ${movie.title}?`} rows={4} required />
+      <div className="flex items-center space-x-2">
+        <Checkbox id="isPublic" name="isPublic" defaultChecked />
+        <Label htmlFor="isPublic" className="text-sm font-normal">Make review public</Label>
+      </div>
+      <Button type="submit" className="w-full" disabled={pending || rating === 0}>
+        {pending ? 'Submitting...' : 'Submit Review'}
+      </Button>
+    </form>
+  )
+}
+
+
 export default function MovieDetailPage({ params }: { params: { id: string } }) {
   // In a real app, fetch movie data using params.id
+  // This would include user interaction data like `isLiked`, `userRating`, `watchStatus`
   const movie = mockMovie; // Using mock data for now
+  const { toast } = useToast();
+
+  const handleLike = async () => {
+    const result = await likeMovieAction(movie, !movie.isLiked);
+    toast({
+      title: result.success ? 'Success' : 'Error',
+      description: result.message,
+      variant: result.success ? 'default' : 'destructive'
+    });
+    // In a real app, you'd update the state based on the result
+  }
+  
+  const handleSetWatchStatus = async (status: 'watched' | 'want-to-watch') => {
+      const result = await setWatchStatusAction(movie, status);
+      toast({
+          title: result.success ? 'Success' : 'Error',
+          description: result.message,
+          variant: result.success ? 'default' : 'destructive'
+      })
+  }
 
   return (
     <div>
@@ -54,7 +125,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
           {/* Left Column: Poster and Actions */}
           <div className="md:col-span-1 space-y-6">
-            <Card className="overflow-hidden shadow-lg">
+            <Card className="overflow-hidden shadow-lg relative">
               <Image
                 src={movie.posterUrl || "https://placehold.co/400x600.png"}
                 alt={`Poster for ${movie.title}`}
@@ -64,20 +135,34 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                 data-ai-hint={movie.dataAiHint}
                 priority // Prioritize loading main movie poster
               />
+               <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white hover:text-red-500 rounded-full h-10 w-10"
+                onClick={handleLike}
+               >
+                <Heart className={cn("h-5 w-5", movie.isLiked && "fill-red-500 text-red-500")} />
+              </Button>
             </Card>
             
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-xl">Log, Rate, Review</CardTitle>
+                    <CardTitle className="text-xl">Log or Review</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Your Rating:</Label>
-                        <StarRating rating={movie.userRating || 0} onRatingChange={(newRating) => console.log(newRating)} size={24} />
-                    </div>
                      <div className="flex gap-2 flex-wrap">
-                        <Button variant={movie.watchStatus === 'watched' ? 'default' : 'outline'}><Film className="mr-2 h-4 w-4" /> Watched</Button>
-                        <Button variant={movie.watchStatus === 'want-to-watch' ? 'default' : 'outline'}><Clock className="mr-2 h-4 w-4" /> Want to Watch</Button>
+                        <Button 
+                            variant={movie.watchStatus === 'watched' ? 'default' : 'outline'}
+                            onClick={() => handleSetWatchStatus('watched')}
+                        >
+                            <Film className="mr-2 h-4 w-4" /> Watched
+                        </Button>
+                        <Button 
+                            variant={movie.watchStatus === 'want-to-watch' ? 'default' : 'outline'}
+                            onClick={() => handleSetWatchStatus('want-to-watch')}
+                        >
+                            <Clock className="mr-2 h-4 w-4" /> Want to Watch
+                        </Button>
                     </div>
                     <Button variant="secondary" className="w-full"><PlusCircle className="mr-2 h-4 w-4" /> Add to List</Button>
                 </CardContent>
@@ -85,13 +170,8 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
 
             <Card>
                 <CardHeader><CardTitle className="text-xl">Write a Review</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    <Textarea placeholder={`What are your thoughts on ${movie.title}?`} rows={4} />
-                     <div className="flex items-center space-x-2">
-                        <Checkbox id="public-review" />
-                        <Label htmlFor="public-review" className="text-sm font-normal">Make review public</Label>
-                    </div>
-                    <Button className="w-full">Submit Review</Button>
+                <CardContent>
+                    <ReviewForm movie={movie} />
                 </CardContent>
             </Card>
           </div>

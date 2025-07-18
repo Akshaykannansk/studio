@@ -13,10 +13,12 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres-db:5432/filmfriend_db
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
       - NEXT_PUBLIC_TMDB_API_KEY=${NEXT_PUBLIC_TMDB_API_KEY}
     depends_on:
       - postgres-db
+      - redis-cache
     restart: always
 
   postgres-db:
@@ -30,6 +32,15 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    restart: always
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: filmfriend_redis_cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
     restart: always
 
   pgadmin:
@@ -48,4 +59,5 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   pgadmin_data:
