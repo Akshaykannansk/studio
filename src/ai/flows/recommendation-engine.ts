@@ -54,7 +54,11 @@ export async function getRecommendations(input: RecommendationInput): Promise<Re
 
 const prompt = ai.definePrompt({
   name: 'recommendationPrompt',
-  input: {schema: RecommendationInputSchema},
+  input: {schema: RecommendationInputSchema.extend({
+    isListSuggestions: z.boolean().optional(),
+    isWatchNext: z.boolean().optional(),
+    isSimilarUsers: z.boolean().optional(),
+  })},
   output: {schema: RecommendationOutputSchema},
   prompt: `You are a world-class movie recommendation engine named FilmFriend AI.
 Your goal is to provide personalized and insightful recommendations based on a user's profile.
@@ -66,7 +70,7 @@ User Profile:
 
 You will perform one of the following tasks based on the 'recommendationType'.
 
-{{#if (eq recommendationType "LIST_SUGGESTIONS")}}
+{{#if isListSuggestions}}
 Task: Suggest movies to add to a specific list.
 List Name: {{{context.listName}}}
 Movies already in the list: {{#each context.listMovies}}{{this.title}}{{#unless @last}}, {{/unless}}{{/each}}
@@ -76,7 +80,7 @@ The suggestions should be complementary and enhance the theme of the list.
 Return ONLY the movie titles in the 'suggestedMovies' array.
 {{/if}}
 
-{{#if (eq recommendationType "WATCH_NEXT")}}
+{{#if isWatchNext}}
 Task: Recommend movies for the user to watch next.
 
 Based on the user's entire profile (watched, liked, lists), suggest 5 movies they would likely enjoy.
@@ -85,7 +89,7 @@ Do not suggest movies that are already in their watched or liked history.
 Return ONLY the movie titles in the 'suggestedMovies' array.
 {{/if}}
 
-{{#if (eq recommendationType "SIMILAR_USERS")}}
+{{#if isSimilarUsers}}
 Task: Find other users with similar tastes.
 
 Analyze the user's profile and invent 3 fictional user profiles who would be great "film friends" for this user.
@@ -102,8 +106,14 @@ const recommendationFlow = ai.defineFlow(
     inputSchema: RecommendationInputSchema,
     outputSchema: RecommendationOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const promptInput = {
+      ...input,
+      isListSuggestions: input.recommendationType === 'LIST_SUGGESTIONS',
+      isWatchNext: input.recommendationType === 'WATCH_NEXT',
+      isSimilarUsers: input.recommendationType === 'SIMILAR_USERS',
+    };
+    const {output} = await prompt(promptInput);
     return output!;
   }
 );
