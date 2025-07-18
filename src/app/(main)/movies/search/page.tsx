@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { MovieCard } from '@/components/movie-card';
 import type { Movie, TMDbMovieResult } from '@/types/filmfriend';
-import { SearchIcon, Loader2 } from 'lucide-react';
+import { SearchIcon, Loader2, Film } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || "YOUR_TMDB_API_KEY"; // Replace with your actual key or use env var
+const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || "d14c8332b8134914d3c3571214c76949"; // Replace with your actual key or use env var
 
 export default function MovieSearchPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,6 +36,7 @@ export default function MovieSearchPage() {
         posterUrl: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://placehold.co/300x450.png?text=No+Image',
         overview: movie.overview,
         tmdbId: movie.id.toString(),
+        averageRating: movie.vote_average ? movie.vote_average / 2 : undefined,
         dataAiHint: "movie poster"
       }));
       setResults(movies);
@@ -77,6 +78,7 @@ export default function MovieSearchPage() {
         posterUrl: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://placehold.co/300x450.png?text=No+Image',
         overview: movie.overview,
         tmdbId: movie.id.toString(),
+        averageRating: movie.vote_average ? movie.vote_average / 2 : undefined,
         dataAiHint: "movie poster"
       }));
       setResults(movies);
@@ -120,7 +122,7 @@ export default function MovieSearchPage() {
         {!isLoading && results.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
             {results.map((movie) => (
-               <MovieCard key={movie.id} movie={{...movie, posterUrl: `${movie.posterUrl}`}} />
+               <MovieCard key={movie.id} movie={movie} />
             ))}
           </div>
         )}
@@ -135,7 +137,7 @@ export default function MovieSearchPage() {
 
          {!isLoading && results.length === 0 && initialLoad && searchTerm === '' && (
             <div className="text-center py-10">
-                <FilmIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <Film className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold">Discover Movies</h3>
                 <p className="text-muted-foreground">Popular movies are shown here. Use the search bar above to find specific titles.</p>
             </div>
@@ -144,18 +146,3 @@ export default function MovieSearchPage() {
     </div>
   );
 }
-
-// Dummy FilmIcon if not imported, or use one from lucide-react
-const FilmIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
-    <line x1="7" y1="2" x2="7" y2="22"></line>
-    <line x1="17" y1="2" x2="17" y2="22"></line>
-    <line x1="2" y1="12" x2="22" y2="12"></line>
-    <line x1="2" y1="7" x2="7" y2="7"></line>
-    <line x1="2" y1="17" x2="7" y2="17"></line>
-    <line x1="17" y1="17" x2="22" y2="17"></line>
-    <line x1="17" y1="7" x2="22" y2="7"></line>
-  </svg>
-);
-

@@ -23,6 +23,7 @@ export interface Movie {
   userRating?: number; // User's rating for this movie, 0.5 - 5.0
   averageRating?: number; // Average rating from all users
   watchStatus?: 'watched' | 'rewatched' | 'want-to-watch';
+  dataAiHint?: string;
 }
 
 export interface Review {
@@ -73,4 +74,5 @@ export interface TMDbMovieResult {
   poster_path: string | null;
   release_date: string;
   overview: string;
+  vote_average?: number;
 }

@@ -2,9 +2,10 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { MovieList, User } from '@/types/filmfriend';
-import { PlusCircle, Eye, Lock, Users, ThumbsUp, MessageSquare } from 'lucide-react';
+import { PlusCircle, Eye, Lock, Users, ThumbsUp, MessageSquare, List } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 // Mock data
 const mockUser: User = {

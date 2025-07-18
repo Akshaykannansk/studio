@@ -37,7 +37,7 @@ export default function MainAppLayout({
       <div className="flex min-h-screen w-full">
         <Sidebar collapsible="icon" className="border-r">
           <SidebarHeader className="p-2">
-            <Link href="/" className="flex items-center gap-2 p-2 font-semibold text-lg text-sidebar-foreground hover:text-sidebar-primary transition-colors">
+            <Link href="/dashboard" className="flex items-center gap-2 p-2 font-semibold text-lg text-sidebar-foreground hover:text-sidebar-primary transition-colors">
               <Clapperboard className="h-7 w-7 text-sidebar-primary" />
               <span className="group-data-[collapsible=icon]:hidden">FilmFriend</span>
             </Link>
@@ -50,8 +50,8 @@ export default function MainAppLayout({
           <SidebarContent className="flex-1 overflow-y-auto">
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Home">
-                  <Link href="/"><Home /> <span className="group-data-[collapsible=icon]:hidden">Home</span></Link>
+                <SidebarMenuButton asChild tooltip="Dashboard">
+                  <Link href="/dashboard"><Home /> <span className="group-data-[collapsible=icon]:hidden">Dashboard</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -90,7 +90,7 @@ export default function MainAppLayout({
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild tooltip="Logout">
                     {/* In a real app, this would trigger a logout action */}
-                    <Link href="/auth/logout"> 
+                    <Link href="/"> 
                         <LogOut />
                         <span className="group-data-[collapsible=icon]:hidden">Logout</span>
                     </Link>
@@ -105,10 +105,6 @@ export default function MainAppLayout({
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
                 {/* Global Search can go here */}
-                {/* <div className="relative">
-                    <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input type="search" placeholder="Search movies, lists, users..." className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px] bg-background" />
-                </div> */}
             </div>
             {/* Other header items like notifications or user menu can go here for mobile if needed */}
           </header>

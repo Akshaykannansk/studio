@@ -19,10 +19,10 @@ const mockLists = [
     {id: 'list3', name: 'Comfort Movies', movieCount: 42, ownerName: 'Alice Green'},
 ]
 
-export default function HomePage() {
+export default function DashboardPage() {
   return (
     <div>
-      <PageHeader title="Welcome to FilmFriend!" description="Discover and log your favorite movies." />
+      <PageHeader title="Welcome back, Jane!" description="Here's what's new in your FilmFriend world." />
       <div className="container mx-auto p-4 md:p-6 space-y-8">
         
         <section>

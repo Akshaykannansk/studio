@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Textarea } from '@/components/ui/textarea';
 
 // Mock data
 const mockOwner: User = {
@@ -134,7 +135,7 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {list.movies.map((movie) => (
                   <div key={movie.id} className="relative group">
-                    <MovieCard movie={{...movie, posterUrl: `${movie.posterUrl}&aihint=${movie.dataAiHint || 'list movie'}`}} />
+                    <MovieCard movie={{...movie, posterUrl: `${movie.posterUrl}`}} />
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
