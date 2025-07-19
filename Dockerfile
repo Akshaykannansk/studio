@@ -1,33 +1,34 @@
+# Dockerfile for Next.js App
+
 # 1. Builder Stage
 FROM node:20-alpine AS builder
+
 WORKDIR /app
 
-# Copy config files and source code
-COPY package*.json ./
-COPY tsconfig.json .
-COPY tailwind.config.ts .
-COPY next.config.ts .
-COPY components.json .
-COPY src ./src
+# Copy package.json and package-lock.json
+COPY package.json package-lock.json* ./
 
 # Install dependencies
 RUN npm install
 
-# Build the Next.js application
+# Copy the rest of the application source code
+COPY . .
+
+# Build the Next.js app
 RUN npm run build
 
 # 2. Runner Stage
 FROM node:20-alpine AS runner
+
 WORKDIR /app
 
-ENV NODE_ENV=production
+# Copy built app from builder stage
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
-# Copy the standalone output from the builder stage
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# The Next.js app will run on port 3000 by default
+# Expose port 3000
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# Command to run the app
+CMD ["npm", "start"]
