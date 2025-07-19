@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { PageHeader } from '@/components/page-header';
@@ -114,6 +112,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
   const [isPending, startTransition] = useTransition();
 
   // In a real app, this would be fetched from the DB, including user interaction data.
+  console.log(`[DATA FETCH] Loading movie details for id '${params.id}' from mock data.`);
   const [movie, setMovie] = useState<Movie>(mockMovie);
 
   const handleLike = async () => {

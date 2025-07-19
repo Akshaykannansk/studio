@@ -53,6 +53,7 @@ const mockList: MovieList = {
 
 export default function ListDetailPage({ params }: { params: { id: string } }) {
   // In a real app, fetch list data using params.id
+  console.log(`[DATA FETCH] Loading list detail for id '${params.id}' from mock data.`);
   const list = mockList; // Using mock data
   const { toast } = useToast();
 
@@ -61,15 +62,19 @@ export default function ListDetailPage({ params }: { params: { id: string } }) {
 
   const handleGetSuggestions = async () => {
     setIsLoadingSuggestions(true);
+    const suggestionInput = {
+      listName: list.name,
+      listMovies: list.movies.map(m => ({ title: m.title, year: m.year })),
+      tasteDescription: "I enjoy thought-provoking sci-fi with strong visuals and complex characters." // This would come from user profile
+    };
+
+    console.log('[DATA FETCH] Requesting AI suggestions with input:', suggestionInput);
     
     try {
-      const result = await generateListSuggestions({
-        listName: list.name,
-        listMovies: list.movies.map(m => ({ title: m.title, year: m.year })),
-        tasteDescription: "I enjoy thought-provoking sci-fi with strong visuals and complex characters." // This would come from user profile
-      });
+      const result = await generateListSuggestions(suggestionInput);
       setSuggestedMovies(result.suggestions);
-       toast({ title: "Suggestions Loaded", description: "AI has recommended some movies for your list." });
+      console.log('[DATA FETCH] Received AI suggestions:', result.suggestions);
+      toast({ title: "Suggestions Loaded", description: "AI has recommended some movies for your list." });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Could not generate suggestions.", variant: "destructive" });

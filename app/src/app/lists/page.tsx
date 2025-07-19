@@ -23,6 +23,7 @@ const mockLists: MovieList[] = [
 ];
 
 export default function ListsPage() {
+  console.log('[DATA FETCH] Loading movie lists from mock data.');
   const lists = mockLists;
 
   return (

@@ -28,6 +28,7 @@ const mockRecommendations: Movie[] = [
 
 
 export default function DashboardPage() {
+  console.log("[DATA FETCH] Loading dashboard data from mock data sources.");
   const recentlyWatched = mockRecentlyWatched;
   const popularLists = mockPopularLists;
   const recommendations = mockRecommendations;

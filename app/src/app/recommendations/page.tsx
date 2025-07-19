@@ -21,6 +21,7 @@ type SimilarUser = {
 // This is a mock function. In a real app, you'd search your movie database.
 const findMovieByTitle = async (title: string): Promise<Movie | null> => {
     // Simulate API call
+    console.log(`[DATA FETCH] Finding movie by title (mock): "${title}"`);
     await new Promise(res => setTimeout(res, 50)); 
     const mockDb: Movie[] = [
         { id: 'rec1', title: 'Everything Everywhere All at Once', year: 2022, posterUrl: 'https://placehold.co/300x450.png?text=EEAAO', averageRating: 4.7, dataAiHint: "multiverse action" },
@@ -59,7 +60,10 @@ export default function RecommendationsPage() {
 
         try {
             // Get movie recommendations
+            console.log('[DATA FETCH] Requesting AI recommendations for WATCH_NEXT with input:', recommendationInput);
             const movieRecs = await getRecommendations({...recommendationInput, recommendationType: 'WATCH_NEXT'});
+            console.log('[DATA FETCH] Received AI recommendations for WATCH_NEXT:', movieRecs.watchNext);
+
             if(movieRecs.watchNext) {
                 const moviePromises = movieRecs.watchNext.map(m => findMovieByTitle(m.title));
                 const resolvedMovies = (await Promise.all(moviePromises)).filter((m): m is Movie => m !== null);
@@ -67,7 +71,10 @@ export default function RecommendationsPage() {
             }
 
             // Get similar user recommendations
+            console.log('[DATA FETCH] Requesting AI recommendations for SIMILAR_USERS with input:', recommendationInput);
             const userRecs = await getRecommendations({...recommendationInput, recommendationType: 'SIMILAR_USERS'});
+            console.log('[DATA FETCH] Received AI recommendations for SIMILAR_USERS:', userRecs.similarUsers);
+
             if (userRecs.similarUsers) {
                 setSimilarUsers(userRecs.similarUsers);
             }
