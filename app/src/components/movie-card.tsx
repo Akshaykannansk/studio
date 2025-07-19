@@ -26,7 +26,7 @@ export function MovieCard({ movie }: MovieCardProps) {
 
   return (
     <Card className="overflow-hidden h-full flex flex-col transition-all duration-300 ease-in-out hover:shadow-xl hover:border-primary group">
-      <Link href={`/dashboard/movies/${movie.id}`} className="block">
+      <Link href={`/movies/${movie.id}`} className="block">
         <CardHeader className="p-0 relative">
           <Image
             src={movie.posterUrl || "https://placehold.co/300x450.png"}
@@ -65,7 +65,7 @@ export function MovieCard({ movie }: MovieCardProps) {
       </div>
 
       <CardContent className="p-4 flex-grow">
-        <Link href={`/dashboard/movies/${movie.id}`} className="block">
+        <Link href={`/movies/${movie.id}`} className="block">
           <CardTitle className="text-lg leading-tight mb-1 group-hover:text-primary transition-colors">
             {movie.title}
           </CardTitle>
@@ -75,7 +75,7 @@ export function MovieCard({ movie }: MovieCardProps) {
         </Link>
       </CardContent>
       <CardFooter className="p-4 pt-0">
-        <Link href={`/dashboard/movies/${movie.id}`} className="flex-grow flex items-center gap-1 text-sm text-muted-foreground">
+        <Link href={`/movies/${movie.id}`} className="flex-grow flex items-center gap-1 text-sm text-muted-foreground">
           {movie.averageRating !== undefined && (
              <>
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
