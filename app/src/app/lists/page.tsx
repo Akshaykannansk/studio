@@ -3,29 +3,27 @@
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import type { MovieList } from '@/types/filmfriend';
+import type { MovieList, User } from '@/types/filmfriend';
 import { PlusCircle, Eye, Lock, Users, ThumbsUp, MessageSquare, List } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import useSWR from 'swr';
-import { Skeleton } from '@/components/ui/skeleton';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+// Mock data
+const mockUser: User = {
+  id: '1',
+  username: 'cinephile_jane',
+  name: 'Jane Doe',
+};
 
-function ListsSkeleton() {
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-48 w-full" />
-            ))}
-        </div>
-    )
-}
+const mockLists: MovieList[] = [
+  { id: 'list1', name: 'Sci-Fi Masterpieces', description: 'A collection of the greatest science fiction films ever made.', owner: mockUser, movies: [{id: 'm1', title: 'Blade Runner', posterUrl: 'https://placehold.co/100x150.png?text=1'}, {id: 'm2', title: '2001: A Space Odyssey', posterUrl: 'https://placehold.co/100x150.png?text=2'}, {id: 'm3', title: 'The Matrix', posterUrl: 'https://placehold.co/100x150.png?text=3'}], isPublic: true, likesCount: 120, commentsCount: 15, createdAt: '2023-01-15', updatedAt: '2023-02-20' },
+  { id: 'list2', name: 'Mind-Bending Thrillers', description: 'Movies that will keep you on the edge of your seat and questioning reality.', owner: mockUser, movies: [{id: 'm4', title: 'Inception', posterUrl: 'https://placehold.co/100x150.png?text=4'}, {id: 'm5', title: 'Shutter Island', posterUrl: 'https://placehold.co/100x150.png?text=5'}], isPublic: true, likesCount: 95, commentsCount: 8, createdAt: '2023-03-10', updatedAt: '2023-03-10' },
+  { id: 'list3', name: 'Comfort Movies', description: 'My go-to films for a cozy night in.', owner: mockUser, movies: [{id: 'm6', title: 'Paddington 2', posterUrl: 'https://placehold.co/100x150.png?text=6'}, {id: 'm7', title: 'Spirited Away', posterUrl: 'https://placehold.co/100x150.png?text=7'}, {id: 'm8', title: 'School of Rock', posterUrl: 'https://placehold.co/100x150.png?text=8'}, {id: 'm9', title: 'LOTR', posterUrl: 'https://placehold.co/100x150.png?text=9'}], isPublic: false, likesCount: 20, commentsCount: 2, createdAt: '2023-05-01', updatedAt: '2023-06-11' },
+];
 
 export default function ListsPage() {
-  // In a real app, user id would come from auth context
-  const { data: lists, error } = useSWR<MovieList[]>('/api/users/1/lists', fetcher);
+  const lists = mockLists;
 
   return (
     <div>
@@ -35,19 +33,16 @@ export default function ListsPage() {
         </Button>
       </PageHeader>
       <div className="container mx-auto p-4 md:p-6">
-        {error && <p className="text-destructive text-center">Failed to load your lists.</p>}
-        {!lists && !error && <ListsSkeleton />}
-        {lists && (
-          lists.length === 0 ? (
-            <div className="text-center py-10 border rounded-lg bg-card">
-              <List className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold">No lists yet!</h3>
-              <p className="text-muted-foreground mb-4">Create your first movie list to get started.</p>
-              <Button asChild>
-                <Link href="/lists/create"><PlusCircle className="mr-2 h-4 w-4" /> Create New List</Link>
-              </Button>
-            </div>
-          ) : (
+        {lists && lists.length === 0 ? (
+          <div className="text-center py-10 border rounded-lg bg-card">
+            <List className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold">No lists yet!</h3>
+            <p className="text-muted-foreground mb-4">Create your first movie list to get started.</p>
+            <Button asChild>
+              <Link href="/lists/create"><PlusCircle className="mr-2 h-4 w-4" /> Create New List</Link>
+            </Button>
+          </div>
+        ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {lists.map((list) => (
                 <Link key={list.id} href={`/lists/${list.id}`} className="block group">
@@ -102,7 +97,6 @@ export default function ListsPage() {
                 </Link>
               ))}
             </div>
-          )
         )}
       </div>
     </div>

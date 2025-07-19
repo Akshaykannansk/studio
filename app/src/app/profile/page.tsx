@@ -10,12 +10,27 @@ import { Edit3, Film, List, MessageSquare, Heart, Eye, Bookmark, History } from 
 import Image from 'next/image';
 import Link from 'next/link';
 import { StarRating } from '@/components/star-rating';
-import useSWR from 'swr';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+// Mock data
+const mockUser: User = {
+  id: '1',
+  username: 'cinephile_jane',
+  name: 'Jane Doe',
+  avatarUrl: 'https://placehold.co/200x200.png',
+  bio: 'Lover of classic cinema, sci-fi, and everything in between. Trying to watch every movie ever made (almost).',
+  followersCount: 1250,
+  followingCount: 340,
+  favoriteMovies: [
+    { id: 'fav1', title: 'Pulp Fiction', year: 1994, posterUrl: 'https://placehold.co/200x300.png?text=Pulp+Fiction', dataAiHint: "crime film" },
+    { id: 'fav2', title: '2001: A Space Odyssey', year: 1968, posterUrl: 'https://placehold.co/200x300.png?text=Space+Odyssey', dataAiHint: "space epic" },
+    { id: 'fav3', title: 'Spirited Away', year: 2001, posterUrl: 'https://placehold.co/200x300.png?text=Spirited+Away', dataAiHint: "anime fantasy" },
+    { id: 'fav4', title: 'The Godfather', year: 1972, posterUrl: 'https://placehold.co/200x300.png?text=The+Godfather', dataAiHint: "mafia drama" },
+  ]
+};
 
-// This is a dynamic component because it depends on the activity type
+type ActivityLog = {type: 'watched' | 'liked' | 'list_created' | 'reviewed' | 'watchlist', item: any, date: string};
+
 const activityIcons: Record<string, React.ReactElement> = {
     watched: <Eye className="h-5 w-5 text-primary mt-1" />,
     liked: <Heart className="h-5 w-5 text-red-500 mt-1" />,
@@ -24,26 +39,20 @@ const activityIcons: Record<string, React.ReactElement> = {
     watchlist: <Bookmark className="h-5 w-5 text-blue-500 mt-1" />,
 };
 
-type ActivityLog = {type: 'watched' | 'liked' | 'list_created' | 'reviewed' | 'watchlist', item: any, date: string};
+const activityText = (activity: ActivityLog): string => {
+    const { type, item } = activity;
+    switch(type) {
+        case 'watched': return `Watched ${item.title}`;
+        case 'liked': return `Liked ${item.title}`;
+        case 'list_created': return `Created list: ${item.name}`;
+        case 'reviewed': return `Reviewed ${item.movie.title}`;
+        case 'watchlist': return `Added ${item.title} to their watchlist`;
+        default: return 'Unknown activity';
+    }
+}
 
 function ActivityFeed() {
-    const { data: activity, error } = useSWR<ActivityLog[]>('/api/users/1/activity', fetcher);
-    
-    const activityText = (activity: ActivityLog): string => {
-        const { type, item } = activity;
-        switch(type) {
-            case 'watched': return `Watched ${item.title}`;
-            case 'liked': return `Liked ${item.title}`;
-            case 'list_created': return `Created list: ${item.name}`;
-            case 'reviewed': return `Reviewed ${item.movie.title}`;
-            case 'watchlist': return `Added ${item.title} to their watchlist`;
-            default: return 'Unknown activity';
-        }
-    }
-
-    if (error) return <p className="text-destructive">Failed to load activity.</p>;
-    if (!activity) return <div className="space-y-4">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>;
-    
+    const activity: ActivityLog[] = []; // This would be fetched
     return (
         <div className="space-y-4">
             {activity.map((act, index) => (
@@ -55,15 +64,13 @@ function ActivityFeed() {
                 </div>
             </div>
             ))}
+            {activity.length === 0 && <p className="text-muted-foreground">No activity yet.</p>}
         </div>
     )
 }
 
 function UserLists() {
-    const { data: lists, error } = useSWR<MovieListType[]>('/api/users/1/lists', fetcher);
-    if(error) return <p className="text-destructive">Failed to load lists.</p>;
-    if(!lists) return <div className="space-y-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</div>;
-
+    const lists: MovieListType[] = []; // This would be fetched
     return (
         <div className="space-y-4">
             {lists.length > 0 ? lists.map(list => (
@@ -83,10 +90,7 @@ function UserLists() {
 }
 
 function UserReviews() {
-     const { data: reviews, error } = useSWR<ReviewType[]>('/api/users/1/reviews', fetcher);
-    if(error) return <p className="text-destructive">Failed to load reviews.</p>;
-    if(!reviews) return <div className="space-y-4">{Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}</div>;
-
+    const reviews: ReviewType[] = []; // This would be fetched
     return (
          <div className="space-y-6">
             {reviews.length > 0 ? reviews.map(review => (
@@ -106,38 +110,8 @@ function UserReviews() {
     )
 }
 
-function ProfilePageSkeleton() {
-    return (
-         <div>
-            <PageHeader title={<Skeleton className="h-8 w-48" />} description={<Skeleton className="h-4 w-32" />}>
-                <Skeleton className="h-9 w-32" />
-            </PageHeader>
-             <div className="container mx-auto p-4 md:p-6 space-y-8">
-                <Card>
-                    <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
-                        <Skeleton className="h-32 w-32 rounded-full" />
-                        <div className="flex-1 w-full space-y-3">
-                            <Skeleton className="h-4 w-full" />
-                             <Skeleton className="h-4 w-3/4" />
-                            <div className="flex gap-6 pt-2">
-                                <Skeleton className="h-8 w-16" />
-                                <Skeleton className="h-8 w-16" />
-                                <Skeleton className="h-8 w-16" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-             </div>
-        </div>
-    )
-}
-
 export default function ProfilePage() {
-    // In a real app, user ID would come from auth context.
-    const { data: user, error } = useSWR<User>('/api/users/1/profile', fetcher);
-
-    if (error) return <div className="p-6 text-center text-destructive">Failed to load user profile.</div>
-    if (!user) return <ProfilePageSkeleton />;
+    const user = mockUser;
 
   return (
     <div>

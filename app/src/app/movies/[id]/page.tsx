@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from '@/components/page-header';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Movie, Review as ReviewType, WatchStatus } from '@/types/filmfriend';
+import type { Movie, Review as ReviewType } from '@/types/filmfriend';
 import { Eye, Bookmark, Film, Heart, MessageSquare, PlusCircle, Star as StarIcon, ThumbsUp, UserCircle, History, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -19,12 +20,40 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useTransition } from 'react';
 import { cn } from '@/lib/utils';
-import useSWR, { useSWRConfig } from 'swr';
-import { Skeleton } from '@/components/ui/skeleton';
+import { likeMovieAction, setWatchStatusAction } from '@/app/actions/movie-actions';
+import type { WatchStatus } from '@/types/filmfriend';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-// This component is extracted to handle its own state and API calls.
+// Mock data for a single movie
+const mockMovie: Movie = {
+  id: '335983', // TMDB ID for Blade Runner 2049
+  title: 'Blade Runner 2049',
+  year: 2017,
+  posterUrl: 'https://placehold.co/400x600.png?text=Blade+Runner+2049',
+  overview: 'Young Blade Runner K\\'s discovery of a long-buried secret leads him to track down former Blade Runner Rick Deckard, who\\'s been missing for thirty years.',
+  genres: ['Sci-Fi', 'Thriller', 'Action'],
+  director: 'Denis Villeneuve',
+  cast: ['Ryan Gosling', 'Harrison Ford', 'Ana de Armas', 'Sylvia Hoeks', 'Robin Wright'],
+  averageRating: 4.5,
+  userRating: 4.0, // Example user rating
+  watchStatus: 'watched',
+  isLiked: false, // Example like status
+  dataAiHint: "cyberpunk future"
+};
+
+const mockReviews: ReviewType[] = [
+  { id: 'r1', user: { id: 'u1', username: 'critic101', name: 'Alex Reviewer', avatarUrl: 'https://placehold.co/40x40.png?text=AR' }, movie: mockMovie, rating: 5, text: 'A stunning visual masterpiece with a thought-provoking narrative. Villeneuve has outdone himself.', createdAt: '2023-10-26', likesCount: 152, isPublic: true },
+  { id: 'r2', user: { id: 'u2', username: 'moviebuff_22', name: 'Sarah Lee', avatarUrl: 'https://placehold.co/40x40.png?text=SL' }, movie: mockMovie, rating: 4.5, text: 'Loved the atmosphere and cinematography. The pacing was a bit slow at times, but overall a fantastic film.', createdAt: '2023-10-24', likesCount: 88, isPublic: true },
+];
+
+const mockSimilarMovies: Movie[] = [
+  { id: 'sim1', title: 'Blade Runner', year: 1982, posterUrl: 'https://placehold.co/300x450.png?text=Blade+Runner', averageRating: 4.6, dataAiHint: "original classic" },
+  { id: 'sim2', title: 'Arrival', year: 2016, posterUrl: 'https://placehold.co/300x450.png?text=Arrival', averageRating: 4.3, dataAiHint: "alien communication" },
+  { id: 'sim3', title: 'Dune', year: 2021, posterUrl: 'https://placehold.co/300x450.png?text=Dune', averageRating: 4.4, dataAiHint: "desert planet" },
+  { id: 'sim4', title: 'Ex Machina', year: 2014, posterUrl: 'https://placehold.co/300x450.png?text=Ex+Machina', averageRating: 4.2, dataAiHint: "artificial intelligence" },
+];
+
+
 function ReviewForm({ movie, onReviewSubmit }: { movie: Movie, onReviewSubmit: () => void }) {
   const { toast } = useToast();
   const [rating, setRating] = useState(0);
@@ -35,33 +64,33 @@ function ReviewForm({ movie, onReviewSubmit }: { movie: Movie, onReviewSubmit: (
     setIsSubmitting(true);
     const formData = new FormData(event.currentTarget);
     
+    // This is where you would call your FastAPI backend.
     const reviewData = {
-      movieId: movie.id,
+      movieId: formData.get('movieId') as string,
+      movieTitle: formData.get('movieTitle') as string,
       rating: parseFloat(formData.get('rating') as string),
       text: formData.get('reviewText') as string,
       isPublic: formData.get('isPublic') === 'on',
     }
+    console.log('[ACTION] Would submit review to FastAPI:', reviewData);
     
-    try {
-        const res = await fetch(`/api/movies/${movie.id}/reviews`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(reviewData)
-        });
-        if(!res.ok) throw new Error("Failed to submit review");
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
 
-        toast({ title: 'Review Submitted!', description: "Your review has been saved." });
-        onReviewSubmit(); // This will trigger a re-fetch of reviews
-    } catch (error) {
-        toast({ title: 'Error', description: "Could not submit your review.", variant: 'destructive' });
-    } finally {
-        setIsSubmitting(false);
-    }
+    toast({
+      title: 'Review Submitted (Simulated)',
+      description: "Your review would be saved to your backend.",
+    });
+    onReviewSubmit();
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <input type="hidden" name="movieId" value={movie.id} />
+      <input type="hidden" name="movieTitle" value={movie.title} />
       <input type="hidden" name="rating" value={rating} />
+      
       <div>
         <Label>Your Rating:</Label>
         <StarRating rating={rating} onRatingChange={setRating} size={24} />
@@ -78,96 +107,44 @@ function ReviewForm({ movie, onReviewSubmit }: { movie: Movie, onReviewSubmit: (
   )
 }
 
-function MoviePageSkeleton() {
-    return (
-        <div>
-            <PageHeader title={<Skeleton className="h-8 w-3/4" />} description={<Skeleton className="h-4 w-1/2" />} />
-            <div className="container mx-auto p-4 md:p-6">
-                <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-                    <div className="md:col-span-1 space-y-6">
-                        <Skeleton className="w-full aspect-[2/3] rounded-lg" />
-                        <Skeleton className="w-full h-48 rounded-lg" />
-                        <Skeleton className="w-full h-64 rounded-lg" />
-                    </div>
-                    <div className="md:col-span-2 space-y-6">
-                        <Skeleton className="w-full h-40 rounded-lg" />
-                        <Skeleton className="w-full h-96 rounded-lg" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-
 
 export default function MovieDetailPage({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const { mutate } = useSWRConfig();
 
-  const movieUrl = `/api/movies/${params.id}`;
-  const reviewsUrl = `/api/movies/${params.id}/reviews`;
-  const similarUrl = `/api/movies/${params.id}/similar`;
-
-  const { data: movie, error: movieError } = useSWR<Movie>(movieUrl, fetcher);
-  const { data: reviews, error: reviewsError, mutate: mutateReviews } = useSWR<ReviewType[]>(reviewsUrl, fetcher);
-  const { data: similarMovies, error: similarError } = useSWR<Movie[]>(similarUrl, fetcher);
+  // In a real app, this would be fetched from the DB, including user interaction data.
+  const [movie, setMovie] = useState<Movie>(mockMovie);
 
   const handleLike = async () => {
-    if(!movie) return;
     const newLikedStatus = !movie.isLiked;
-
+    
     // Optimistically update UI
-    mutate(movieUrl, (currentMovie: Movie | undefined) => {
-        if (!currentMovie) return;
-        return {...currentMovie, isLiked: newLikedStatus };
-    }, false);
-
+    setMovie(m => ({ ...m, isLiked: newLikedStatus }));
     toast({ title: newLikedStatus ? 'Liked!' : 'Unliked', description: `${movie.title} has been updated.` });
     
-    // Trigger API call
-    try {
-        await fetch(`/api/movies/${movie.id}/like`, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ isLiked: newLikedStatus })
-        });
-        mutate(movieUrl); // Revalidate to get final state from server
-    } catch(err) {
-        toast({ title: 'Error', description: 'Could not update like status.', variant: 'destructive'});
-        // Revert optimistic update on failure
-        mutate(movieUrl, (currentMovie: any) => ({...currentMovie, isLiked: !newLikedStatus }), false);
-    }
+    // This is where you would call your FastAPI backend.
+    startTransition(async () => {
+      console.log(`[ACTION] Call FastAPI to like movie ${movie.id} (isLiked: ${newLikedStatus})`);
+      await likeMovieAction(movie.id, newLikedStatus); // This now just logs to console
+    });
   }
   
   const handleSetWatchStatus = async (status: WatchStatus) => {
-      if(!movie) return;
       const originalStatus = movie.watchStatus;
       const newStatus = movie.watchStatus === status ? undefined : status;
       
-      // Optimistic update UI
-      mutate(movieUrl, (currentMovie: Movie | undefined) => {
-        if(!currentMovie) return;
-        return { ...currentMovie, watchStatus: newStatus };
-      }, false);
-
+      // Optimistically update UI
+      setMovie(m => ({ ...m, watchStatus: newStatus }));
       toast({ title: 'Status Updated', description: `${movie.title} status set to ${newStatus || 'none'}.` });
 
-      try {
-        await fetch(`/api/movies/${movie.id}/status`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
-        });
-        mutate(movieUrl);
-      } catch(err) {
-        toast({ title: 'Error', description: 'Could not update watch status.', variant: 'destructive'});
-        mutate(movieUrl, (currentMovie: any) => ({...currentMovie, watchStatus: originalStatus }), false);
-      }
+      // This is where you would call your FastAPI backend.
+      startTransition(async () => {
+          console.log(`[ACTION] Call FastAPI to set status for ${movie.id} to ${newStatus}`);
+          await setWatchStatusAction(movie.id, newStatus); // This now just logs to console
+      });
   }
 
-  if (movieError) return <div className="p-6 text-center text-destructive">Failed to load movie details.</div>
-  if (!movie) return <MoviePageSkeleton />;
+  const [hasReviewed, setHasReviewed] = useState(false); // mock state
   
   return (
     <div>
@@ -184,7 +161,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                 height={600}
                 className="w-full h-auto object-cover"
                 data-ai-hint={movie.dataAiHint}
-                priority 
+                priority // Prioritize loading main movie poster
               />
             </Card>
             
@@ -198,6 +175,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                             variant="ghost" 
                             className={cn("flex flex-col h-auto p-2", movie.isLiked && "text-red-500")}
                             onClick={handleLike}
+                            disabled={isPending}
                         >
                             <Heart className={cn("h-6 w-6", movie.isLiked && "fill-current")} />
                             <span className="text-xs mt-1">Like</span>
@@ -206,6 +184,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                             variant="ghost" 
                             className={cn("flex flex-col h-auto p-2", movie.watchStatus === 'watched' && "text-primary")}
                             onClick={() => handleSetWatchStatus('watched')}
+                            disabled={isPending}
                         >
                             <Eye className="h-6 w-6" />
                             <span className="text-xs mt-1">Watched</span>
@@ -214,13 +193,15 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                             variant="ghost" 
                             className={cn("flex flex-col h-auto p-2", movie.watchStatus === 'want-to-watch' && "text-primary")}
                             onClick={() => handleSetWatchStatus('want-to-watch')}
+                            disabled={isPending}
                         >
                             <Bookmark className="h-6 w-6" />
                             <span className="text-xs mt-1">Watchlist</span>
                         </Button>
                          <Button 
                             variant="ghost" 
-                            className={cn("flex flex-col h-auto p-2")}
+                            className={cn("flex flex-col h-auto p-2", hasReviewed && "text-primary")}
+                            disabled={isPending}
                         >
                             <MessageSquare className="h-6 w-6" />
                             <span className="text-xs mt-1">Review</span>
@@ -234,7 +215,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
             <Card>
                 <CardHeader><CardTitle className="text-xl">Write a Review</CardTitle></CardHeader>
                 <CardContent>
-                    <ReviewForm movie={movie} onReviewSubmit={() => mutateReviews()} />
+                    <ReviewForm movie={movie} onReviewSubmit={() => setHasReviewed(true)} />
                 </CardContent>
             </Card>
           </div>
@@ -254,7 +235,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                         <span className="text-sm text-muted-foreground ml-1">( TMDb )</span>
                     </div>
                 </div>
-              </Header>
+              </CardHeader>
               <CardContent>
                 <p className="text-base leading-relaxed mb-4">{movie.overview}</p>
                 {movie.genres && movie.genres.length > 0 && (
@@ -291,16 +272,15 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                      <p className="flex items-center gap-2">
                         <UserCircle className="h-5 w-5 text-muted-foreground" /> <strong>Director:</strong> {movie.director}
                     </p>
+                    {/* Add more crew if available */}
                   </CardContent>
                 </Card>
               </TabsContent>
               <TabsContent value="reviews">
                 <Card>
-                  <CardHeader><CardTitle>User Reviews ({reviews?.length || 0})</CardTitle></CardHeader>
+                  <CardHeader><CardTitle>User Reviews ({mockReviews.length})</CardTitle></CardHeader>
                   <CardContent className="space-y-6">
-                    {!reviews && !reviewsError && Array.from({length: 2}).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
-                    {reviewsError && <p className="text-destructive">Failed to load reviews.</p>}
-                    {reviews && reviews.map((review) => (
+                    {mockReviews.map((review) => (
                       <div key={review.id} className="p-4 border rounded-lg bg-background/50">
                         <div className="flex items-start gap-3">
                           <Avatar className="h-10 w-10">
@@ -326,7 +306,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                         </div>
                       </div>
                     ))}
-                    {reviews && reviews.length === 0 && <p className="text-muted-foreground">No reviews yet for this movie.</p>}
+                    {mockReviews.length === 0 && <p className="text-muted-foreground">No reviews yet for this movie.</p>}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -336,6 +316,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                   <CardContent className="space-y-2">
                     <p><strong>Release Year:</strong> {movie.year}</p>
                     <p><strong>TMDB ID:</strong> {params.id}</p>
+                    {/* Add more details like runtime, language, country etc. */}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -347,15 +328,11 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
 
         <section>
           <h2 className="text-2xl font-semibold tracking-tight mb-6">Similar Movies</h2>
-           {!similarMovies && !similarError && <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">{Array.from({length:6}).map((_,i) => <Skeleton key={i} className="h-[300px] w-full" />)}</div>}
-           {similarError && <p className="text-destructive">Failed to load similar movies.</p>}
-           {similarMovies && similarMovies.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                {similarMovies.map((simMovie) => (
-                  <MovieCard key={simMovie.id} movie={simMovie} />
-                ))}
-              </div>
-           )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+            {mockSimilarMovies.map((simMovie) => (
+              <MovieCard key={simMovie.id} movie={{...simMovie, posterUrl: `${simMovie.posterUrl}&aihint=${simMovie.dataAiHint || 'movie poster'}`}} />
+            ))}
+          </div>
         </section>
       </div>
     </div>

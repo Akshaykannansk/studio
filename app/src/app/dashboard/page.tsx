@@ -3,43 +3,34 @@
 import { MovieCard } from '@/components/movie-card';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import type { Movie, MovieList } from '@/types/filmfriend';
+import type { Movie, MovieList, User } from '@/types/filmfriend';
 import { ArrowRight, Film, List, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
-import useSWR from 'swr';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+// Mock data to be replaced with dynamic data
+const mockRecentlyWatched: Movie[] = [
+  { id: '1', title: 'Inception', year: 2010, posterUrl: 'https://placehold.co/300x450.png?text=Inception', averageRating: 4.9, watchStatus: 'watched', dataAiHint: "sci-fi thriller" },
+  { id: '2', title: 'The Matrix', year: 1999, posterUrl: 'https://placehold.co/300x450.png?text=The+Matrix', averageRating: 4.8, watchStatus: 'rewatched', dataAiHint: "action sci-fi" },
+  { id: '3', title: 'Interstellar', year: 2014, posterUrl: 'https://placehold.co/300x450.png?text=Interstellar', averageRating: 4.7, dataAiHint: "space drama" },
+];
 
-function SectionSkeleton() {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="space-y-2">
-          <Skeleton className="h-[300px] w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-      ))}
-    </div>
-  );
-}
+const mockPopularLists: MovieList[] = [
+    {id: 'list1', name: 'Sci-Fi Masterpieces', movies: [], owner: { id: '2', username: 'scififan' }, isPublic: true, createdAt: '2023-01-01', updatedAt: '2023-01-01', likesCount: 101, commentsCount: 12 },
+    {id: 'list2', name: 'Mind-Bending Thrillers', movies: [], owner: { id: '3', username: 'thrillerseeker' }, isPublic: true, createdAt: '2023-01-01', updatedAt: '2023-01-01', likesCount: 99, commentsCount: 8 },
+    {id: 'list3', name: 'Comfort Movies', movies: [], owner: { id: '4', username: 'cozyfilms' }, isPublic: true, createdAt: '2023-01-01', updatedAt: '2023-01-01', likesCount: 250, commentsCount: 45 },
+];
 
-function ListSectionSkeleton() {
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {Array.from({ length: 3 }).map((_, i) => (
-                 <Skeleton key={i} className="h-24 w-full" />
-            ))}
-        </div>
-    )
-}
+const mockRecommendations: Movie[] = [
+  { id: '4', title: 'Parasite', year: 2019, posterUrl: 'https://placehold.co/300x450.png?text=Parasite', averageRating: 4.6, dataAiHint: "korean thriller" },
+  { id: '5', title: 'Everything Everywhere All at Once', year: 2022, posterUrl: 'https://placehold.co/300x450.png?text=EEAAO', averageRating: 4.7, dataAiHint: "multiverse action" },
+];
+
 
 export default function DashboardPage() {
-  // In a real app, the user ID would come from an auth context
-  const { data: recentlyWatched, error: watchedError } = useSWR<Movie[]>('/api/users/1/recently-watched', fetcher);
-  const { data: popularLists, error: listsError } = useSWR<MovieList[]>('/api/lists/popular', fetcher);
-  const { data: recommendations, error: recsError } = useSWR<Movie[]>('/api/users/1/recommendations', fetcher);
+  const recentlyWatched = mockRecentlyWatched;
+  const popularLists = mockPopularLists;
+  const recommendations = mockRecommendations;
 
   return (
     <div>
@@ -53,9 +44,7 @@ export default function DashboardPage() {
               <Link href="/profile?tab=activity">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
-          {!recentlyWatched && !watchedError && <SectionSkeleton />}
-          {watchedError && <p className="text-destructive">Failed to load recently watched movies.</p>}
-          {recentlyWatched && (
+          {recentlyWatched ? (
              recentlyWatched.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                     {recentlyWatched.map((movie) => (
@@ -69,6 +58,8 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground">Go watch some movies!</p>
                 </div>
             )
+          ) : (
+            <div>Loading...</div>
           )}
         </section>
 
@@ -79,9 +70,7 @@ export default function DashboardPage() {
                 <Link href="/lists">Explore Lists <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
             </div>
-             {!popularLists && !listsError && <ListSectionSkeleton />}
-             {listsError && <p className="text-destructive">Failed to load popular lists.</p>}
-             {popularLists && (
+             {popularLists ? (
                 popularLists.length > 0 ? (
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                         {popularLists.map(list => (
@@ -101,6 +90,8 @@ export default function DashboardPage() {
                         <p className="text-muted-foreground">Check back later for popular collections.</p>
                     </div>
                 )
+             ) : (
+                <div>Loading...</div>
              )}
         </section>
 
@@ -111,9 +102,7 @@ export default function DashboardPage() {
               <Link href="/recommendations">More Recommendations <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
-            {!recommendations && !recsError && <SectionSkeleton />}
-            {recsError && <p className="text-destructive">Failed to load recommendations.</p>}
-            {recommendations && (
+            {recommendations ? (
                 recommendations.length > 0 ? (
                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                         {recommendations.map((movie) => (
@@ -127,6 +116,8 @@ export default function DashboardPage() {
                         <p className="text-muted-foreground">Watch and rate more movies to get personalized recommendations.</p>
                     </div>
                 )
+            ) : (
+              <div>Loading...</div>
             )}
         </section>
       </div>

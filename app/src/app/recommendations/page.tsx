@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MovieCard } from '@/components/movie-card';
 import { PageHeader } from '@/components/page-header';
 import type { Movie } from '@/types/filmfriend';
@@ -10,87 +10,109 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import useSWR from 'swr';
-import { Skeleton } from '@/components/ui/skeleton';
+import { getRecommendations } from '@/ai/flows/recommendation-engine';
 
 
 type SimilarUser = {
-    id: string;
     username: string;
-    avatarUrl?: string;
     reason: string;
 }
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
-
-function RecommendationsSkeleton() {
-    return (
-        <div className="space-y-10">
-            <section>
-                 <Skeleton className="h-8 w-72 mb-6" />
-                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                    {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-[300px] w-full" />)}
-                 </div>
-            </section>
-             <section>
-                 <Skeleton className="h-8 w-72 mb-6" />
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />)}
-                 </div>
-            </section>
-        </div>
-    )
+// This is a mock function. In a real app, you'd search your movie database.
+const findMovieByTitle = async (title: string): Promise<Movie | null> => {
+    // Simulate API call
+    await new Promise(res => setTimeout(res, 50)); 
+    const mockDb: Movie[] = [
+        { id: 'rec1', title: 'Everything Everywhere All at Once', year: 2022, posterUrl: 'https://placehold.co/300x450.png?text=EEAAO', averageRating: 4.7, dataAiHint: "multiverse action" },
+        { id: 'rec2', title: 'The Lighthouse', year: 2019, posterUrl: 'https://placehold.co/300x450.png?text=Lighthouse', averageRating: 4.1, dataAiHint: "psychological horror" },
+        { id: 'rec3', title: 'Portrait of a Lady on Fire', year: 2019, posterUrl: 'https://placehold.co/300x450.png?text=Lady+On+Fire', averageRating: 4.6, dataAiHint: "french romance" },
+        { id: 'rec4', title: 'Mad Max: Fury Road', year: 2015, posterUrl: 'https://placehold.co/300x450.png?text=Mad+Max', averageRating: 4.5, dataAiHint: "post apocalyptic" },
+        { id: 'rec5', title: 'Parasite', year: 2019, posterUrl: 'https://placehold.co/300x450.png?text=Parasite', averageRating: 4.6, dataAiHint: "korean thriller" },
+    ];
+    const found = mockDb.find(m => m.title.toLowerCase() === title.toLowerCase());
+    return found || { id: `new-${title.replace(/\s+/g, '')}`, title: title, posterUrl: `https://placehold.co/300x450.png?text=${title.replace(/\s+/g, '+')}`, dataAiHint: "movie poster"};
 }
 
 
 export default function RecommendationsPage() {
     const { toast } = useToast();
-    
-    // In a real app, user ID comes from auth context.
-    const { data: watchNext, error: watchNextError, mutate: mutateWatchNext } = useSWR<Movie[]>('/api/users/1/recommendations/movies', fetcher);
-    const { data: similarUsers, error: similarUsersError, mutate: mutateSimilarUsers } = useSWR<SimilarUser[]>('/api/users/1/recommendations/users', fetcher);
+    const [watchNext, setWatchNext] = useState<Movie[]>([]);
+    const [similarUsers, setSimilarUsers] = useState<SimilarUser[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    
-    const refreshRecommendations = async () => {
+
+    const fetchRecommendations = async () => {
         setIsLoading(true);
+        setWatchNext([]);
+        setSimilarUsers([]);
+        
+        // This would come from the logged-in user's data
+        const recommendationInput = {
+            userProfile: {
+                watchedMovies: [{ title: 'Inception', year: 2010 }, { title: 'The Matrix', year: 1999 }, {title: 'Pulp Fiction'}],
+                likedMovies: [{ title: 'Interstellar', year: 2014 }, {title: 'Parasite'}],
+                movieLists: [
+                    { name: 'Sci-Fi Masterpieces', movies: [{ title: 'Blade Runner 2049' }, { title: 'Dune' }] }
+                ],
+                tasteDescription: "Loves mind-bending sci-fi, intense thrillers, and critically acclaimed foreign films.",
+            },
+        };
+
         try {
-            // Trigger re-fetch for both endpoints
-            await Promise.all([
-                mutateWatchNext(),
-                mutateSimilarUsers()
-            ]);
-            toast({ title: "Refreshed!", description: "Your recommendations have been updated." });
+            // Get movie recommendations
+            const movieRecs = await getRecommendations({...recommendationInput, recommendationType: 'WATCH_NEXT'});
+            if(movieRecs.watchNext) {
+                const moviePromises = movieRecs.watchNext.map(m => findMovieByTitle(m.title));
+                const resolvedMovies = (await Promise.all(moviePromises)).filter((m): m is Movie => m !== null);
+                setWatchNext(resolvedMovies);
+            }
+
+            // Get similar user recommendations
+            const userRecs = await getRecommendations({...recommendationInput, recommendationType: 'SIMILAR_USERS'});
+            if (userRecs.similarUsers) {
+                setSimilarUsers(userRecs.similarUsers);
+            }
+
+            toast({ title: "Recommendations Loaded", description: "AI has generated new recommendations for you." });
+
         } catch (error) {
-            toast({ title: "Error", description: "Could not refresh recommendations.", variant: "destructive" });
+            console.error("Error getting recommendations:", error);
+            toast({ title: "Error", description: "Could not generate recommendations.", variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
-    }
-
-    const hasError = watchNextError || similarUsersError;
-    const isLoadingFirstTime = (!watchNext && !watchNextError) || (!similarUsers && !similarUsersError);
+    };
+    
+    // Fetch recommendations on component mount
+    useEffect(() => {
+        fetchRecommendations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
   return (
     <div>
       <PageHeader title="Personalized Recommendations" description="Discover movies and friends tailored to your taste.">
-          <Button onClick={refreshRecommendations} disabled={isLoading}>
+          <Button onClick={fetchRecommendations} disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
             Refresh Recommendations
           </Button>
       </PageHeader>
       <div className="container mx-auto p-4 md:p-6 space-y-10">
         
-        {isLoadingFirstTime && !hasError && <RecommendationsSkeleton />}
-        {hasError && <p className="text-destructive text-center">Could not load recommendations. Please try again later.</p>}
+        {isLoading && (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="ml-4 text-lg text-muted-foreground">Finding your next favorite movie...</p>
+            </div>
+        )}
         
-        {!isLoadingFirstTime && !hasError && (
+        {!isLoading && (
             <>
                 <section>
                     <h2 className="text-2xl font-semibold tracking-tight mb-6 flex items-center">
                         <ThumbsUp className="mr-3 h-7 w-7 text-primary" />
                         What to Watch Next
                     </h2>
-                    {watchNext && watchNext.length > 0 ? (
+                    {watchNext.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                         {watchNext.map((movie) => (
                             <MovieCard key={movie.id} movie={movie} />
@@ -110,14 +132,14 @@ export default function RecommendationsPage() {
                         <Users className="mr-3 h-7 w-7 text-accent" />
                         Find Your Film Friends
                     </h2>
-                     {similarUsers && similarUsers.length > 0 ? (
+                     {similarUsers.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {similarUsers.map((user) => (
-                                <Card key={user.id}>
+                            {similarUsers.map((user, index) => (
+                                <Card key={index}>
                                     <CardHeader className="flex flex-row items-center gap-4">
                                         <Avatar className="h-12 w-12">
-                                            <AvatarImage src={user.avatarUrl || `https://placehold.co/100x100.png?text=${user.username.substring(0,2)}`} data-ai-hint="profile avatar" />
-                                            <AvatarFallback>{user.username.substring(0,2).toUpperCase()}</AvatarFallback>
+                                            <AvatarImage src={`https://placehold.co/100x100.png?text=${user.username.substring(1,3)}`} data-ai-hint="profile avatar" />
+                                            <AvatarFallback>{user.username.substring(1,3).toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <div>
                                             <CardTitle className="text-lg">{user.username}</CardTitle>
@@ -126,7 +148,7 @@ export default function RecommendationsPage() {
                                     </CardHeader>
                                     <CardContent>
                                         <p className="text-sm text-muted-foreground italic border-l-2 pl-3">"{user.reason}"</p>
-                                        <Button className="mt-4 w-full" asChild><Link href={`/profile/${user.id}`}>View Profile</Link></Button>
+                                        <Button className="mt-4 w-full">View Profile</Button>
                                     </CardContent>
                                 </Card>
                             ))}

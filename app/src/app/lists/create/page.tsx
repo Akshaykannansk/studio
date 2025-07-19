@@ -36,33 +36,18 @@ export default function CreateListPage() {
   });
 
   const onSubmit = async (data: ListFormData) => {
-    try {
-      const response = await fetch('/api/lists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+    // Here you would call a server action to create the list in the database.
+    console.log("Submitting list data:", data);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-      if (!response.ok) {
-        throw new Error('Failed to create list');
-      }
-
-      const newList = await response.json();
-
-      toast({
-        title: "List Created!",
-        description: `Your list "${data.name}" has been successfully created.`,
-      });
-      // Redirect to the newly created list's page
-      router.push(`/lists/${newList.id}`); 
-    } catch (error) {
-      console.error("Failed to create list:", error);
-      toast({
-        title: "Error",
-        description: "Could not create the list. Please try again.",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "List Created! (Simulated)",
+      description: `Your list "${data.name}" would be created.`,
+    });
+    // Redirect to the new list's page or back to all lists
+    router.push(`/lists`); 
   };
 
   return (
