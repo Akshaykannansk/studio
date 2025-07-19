@@ -55,23 +55,18 @@ export default function MainAppLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Search Movies">
-                  <Link href="/movies/search"><Search /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Search Movies</span></Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="My Lists">
-                  <Link href="/lists"><List /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">My Lists</span></Link>
+                  <Link href="/dashboard/lists"><List /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">My Lists</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Recommendations">
-                  <Link href="/recommendations"><ThumbsUp /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Recommendations</span></Link>
+                  <Link href="/dashboard/recommendations"><ThumbsUp /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Recommendations</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Profile">
-                  <Link href="/profile"><User /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Profile</span></Link>
+                  <Link href="/dashboard/profile"><User /> <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Profile</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -81,7 +76,7 @@ export default function MainAppLayout({
              <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild tooltip="Settings">
-                    <Link href="/settings">
+                    <Link href="/dashboard/settings">
                         <Settings />
                         <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Settings</span>
                     </Link>
@@ -90,7 +85,7 @@ export default function MainAppLayout({
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild tooltip="Logout">
                     {/* In a real app, this would trigger a logout action */}
-                    <Link href="/"> 
+                    <Link href="/auth/logout"> 
                         <LogOut />
                         <span className="group-data-[collapsible=icon]:hidden md:group-data-[collapsible=icon]:hidden">Logout</span>
                     </Link>
