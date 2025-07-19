@@ -38,13 +38,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased dark`}>
         <SidebarProvider defaultOpen={true}>
           <div className="flex min-h-screen w-full">
             <Sidebar collapsible="icon" className="border-r">
               <SidebarHeader className="p-2">
                 <Link href="/" className="flex items-center gap-2 p-2 font-semibold text-lg text-sidebar-foreground hover:text-sidebar-primary transition-colors">
-                  <Clapperboard className="h-7 w-7 text-sidebar-primary" />
+                  <Clapperboard className="h-7 w-7 text-primary" />
                   <span className="group-data-[collapsible=icon]:hidden">FilmFriend</span>
                 </Link>
                 {/* User Avatar and Name */}
