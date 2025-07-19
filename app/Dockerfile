@@ -1,43 +1,36 @@
-# 1. Install dependencies
-FROM node:20-alpine AS deps
+# Dockerfile
+
+# 1. Builder Stage
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy root package.json and install root dependencies if any
+# Copy and install dependencies
 COPY package.json package-lock.json* ./
 RUN npm install
 
-# Copy src package.json and install its dependencies
-COPY src/package.json src/package-lock.json* ./src/
-WORKDIR /app/src
-RUN npm install
-
-# 2. Build the application
-FROM node:20-alpine AS builder
-WORKDIR /app
-# Copy all dependencies from the deps stage
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/src/node_modules ./src/node_modules
-# Copy the rest of the source code
+# Copy source code
 COPY . .
 
-# Run the build command from the src directory
-WORKDIR /app/src
+# Build the Next.js app
 RUN npm run build
 
-# 3. Production image
+# 2. Runner Stage
 FROM node:20-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV production
 
-# Copy production assets from the builder stage
-COPY --from=builder /app/src/.next ./src/.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/src/node_modules ./src/node_modules
-COPY --from=builder /app/src/package.json ./src/package.json
+# Add a non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
 
-EXPOSE 9002
+# Copy necessary files from the builder stage
+# Using public* makes this optional if the directory doesn't exist
+COPY --from=builder /app/public* ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
-# The start command in src/package.json is just "next start".
-# We need to tell it where to find the built application.
-CMD ["npm", "run", "start", "--", "--prefix", "src"]
+# Set user and expose port
+USER nextjs
+EXPOSE 3000
+
+# Start the app
+CMD ["node", "server.js"]
