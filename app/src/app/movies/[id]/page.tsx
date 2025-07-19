@@ -31,7 +31,7 @@ const mockMovie: Movie = {
   title: 'Blade Runner 2049',
   year: 2017,
   posterUrl: 'https://placehold.co/400x600.png?text=Blade+Runner+2049',
-  overview: 'Young Blade Runner K\\'s discovery of a long-buried secret leads him to track down former Blade Runner Rick Deckard, who\\'s been missing for thirty years.',
+  overview: 'Young Blade Runner K\'s discovery of a long-buried secret leads him to track down former Blade Runner Rick Deckard, who\'s been missing for thirty years.',
   genres: ['Sci-Fi', 'Thriller', 'Action'],
   director: 'Denis Villeneuve',
   cast: ['Ryan Gosling', 'Harrison Ford', 'Ana de Armas', 'Sylvia Hoeks', 'Robin Wright'],
